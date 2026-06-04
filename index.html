@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MS 2026 — Tipovačka</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #ffffff; --bg2: #f6f5f3; --bg3: #eeedea;
+  --text: #1a1a18; --text2: #6b6b65; --text3: #a8a89f;
+  --border: rgba(0,0,0,0.10); --border2: rgba(0,0,0,0.20);
+  --blue: #185FA5; --blue-bg: #E6F1FB; --blue-dark: #0C447C;
+  --green: #0F6E56; --green-bg: #E1F5EEe;
+  --red: #A32D2D; --red-bg: #FCEBEB;
+  --amber: #BA7517; --amber-bg: #FAEEDA;
+  --gold: #FAC775; --gold-text: #412402;
+  --silver: #B4B2A9; --silver-text: #2C2C2A;
+  --bronze: #F0997B; --bronze-text: #4A1B0C;
+  --r: 10px; --r-lg: 14px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1c1c1a; --bg2: #272724; --bg3: #323230;
+    --text: #f0f0ea; --text2: #9a9a93; --text3: #5e5e58;
+    --border: rgba(255,255,255,0.09); --border2: rgba(255,255,255,0.18);
+    --blue: #85B7EB; --blue-bg: #042C53; --blue-dark: #B5D4F4;
+    --green: #5DCAA5; --green-bg: #04342C;
+    --red: #F09595; --red-bg: #501313;
+    --amber: #EF9F27; --amber-bg: #412402;
+  }
+}
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--bg3); color: var(--text); min-height: 100vh; }
+
+/* LAYOUT */
+.app { max-width: 720px; margin: 0 auto; padding: 0 0 3rem; }
+.header { background: var(--bg); border-bottom: 1px solid var(--border); padding: 2rem 1.5rem 1.5rem; text-align: center; }
+.header h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; }
+.header p { color: var(--text2); font-size: 14px; margin-top: 5px; }
+.pill { display: inline-block; background: var(--blue-bg); color: var(--blue); font-size: 11px; font-weight: 600; padding: 3px 12px; border-radius: 20px; margin-top: 10px; letter-spacing: 0.3px; }
+.content { padding: 1.5rem; }
+.tabs { display: flex; background: var(--bg); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; }
+.tab { flex: 1; padding: 13px 4px; font-size: 13px; text-align: center; cursor: pointer; background: transparent; border: none; color: var(--text2); font-family: inherit; border-bottom: 2px solid transparent; transition: all 0.15s; }
+.tab.active { color: var(--blue); border-bottom-color: var(--blue); font-weight: 500; }
+.tab:hover:not(.active) { color: var(--text); background: var(--bg2); }
+.section { display: none; }
+.section.active { display: block; }
+
+/* CARDS */
+.card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 1.25rem; margin-bottom: 1rem; box-shadow: var(--shadow); }
+.card-title { font-size: 15px; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; }
+.card-title span { font-size: 12px; font-weight: 400; color: var(--text2); }
+
+/* STATUS BAR */
+.status-bar { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: var(--r); font-size: 13px; margin-bottom: 1rem; }
+.status-bar.connecting { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(186,117,23,0.2); }
+.status-bar.ok { background: #E1F5EE; color: var(--green); border: 1px solid rgba(15,110,86,0.2); }
+.status-bar.error { background: var(--red-bg); color: var(--red); border: 1px solid rgba(163,45,45,0.2); }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+.dot.pulse { animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+/* FORMS */
+.field { margin-bottom: 12px; }
+.field label { display: block; font-size: 12px; color: var(--text2); margin-bottom: 5px; font-weight: 500; }
+.input { width: 100%; padding: 10px 14px; font-size: 15px; border: 1px solid var(--border2); border-radius: var(--r); background: var(--bg2); color: var(--text); font-family: inherit; transition: border-color 0.15s; }
+.input:focus { outline: none; border-color: var(--blue); }
+.input.sm { padding: 7px 10px; font-size: 14px; }
+
+/* BUTTONS */
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border-radius: var(--r); border: 1px solid var(--border2); background: var(--bg); color: var(--text); font-size: 14px; cursor: pointer; font-family: inherit; font-weight: 500; transition: all 0.15s; white-space: nowrap; }
+.btn:hover { background: var(--bg2); }
+.btn:active { transform: scale(0.98); }
+.btn.primary { background: var(--blue); color: #fff; border-color: var(--blue); }
+.btn.primary:hover { background: var(--blue-dark); border-color: var(--blue-dark); }
+.btn.danger { background: var(--red); color: #fff; border-color: var(--red); font-size: 12px; padding: 5px 12px; }
+.btn.sm { padding: 6px 12px; font-size: 13px; }
+.btn.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* PLAYER ROWS */
+.player-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.player-row:last-child { border-bottom: none; }
+.avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+.player-info { flex: 1; }
+.player-name { font-size: 14px; font-weight: 500; }
+.player-meta { font-size: 12px; color: var(--text3); margin-top: 1px; }
+
+/* MATCH ROWS */
+.group-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
+.group-label { font-size: 15px; font-weight: 600; }
+.group-badge { font-size: 11px; background: var(--bg2); color: var(--text2); padding: 3px 10px; border-radius: 10px; border: 1px solid var(--border); }
+.match-row { display: flex; align-items: center; gap: 8px; padding: 9px 0; border-bottom: 1px solid var(--border); }
+.match-row:last-child { border-bottom: none; padding-bottom: 0; }
+.team { flex: 1; font-size: 13px; display: flex; align-items: center; gap: 6px; overflow: hidden; }
+.team.right { justify-content: flex-end; flex-direction: row-reverse; }
+.team-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; }
+.flag { font-size: 20px; line-height: 1; flex-shrink: 0; }
+.score-wrap { display: flex; flex-direction: column; align-items: center; gap: 3px; flex-shrink: 0; }
+.score-inputs { display: flex; align-items: center; gap: 5px; }
+.score-inp { width: 40px; height: 36px; text-align: center; font-size: 17px; font-weight: 700; border: 1px solid var(--border2); border-radius: 8px; background: var(--bg2); color: var(--text); font-family: inherit; transition: border-color 0.15s; }
+.score-inp:focus { outline: none; border-color: var(--blue); }
+.score-inp.result { border-color: var(--blue); }
+.score-inp.saved { border-color: var(--green); }
+.score-sep { font-size: 18px; color: var(--text3); font-weight: 700; }
+.match-date { font-size: 10px; color: var(--text3); white-space: nowrap; }
+
+/* PROGRESS */
+.progress-bar { height: 4px; border-radius: 2px; background: var(--bg3); overflow: hidden; }
+.progress-fill { height: 100%; background: var(--blue); border-radius: 2px; transition: width 0.4s ease; }
+
+/* RANKING TABLE */
+.rank-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.rank-table th { font-size: 11px; color: var(--text2); font-weight: 600; text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); text-transform: uppercase; letter-spacing: 0.5px; }
+.rank-table td { padding: 10px 8px; border-bottom: 1px solid var(--border); }
+.rank-table tr:last-child td { border-bottom: none; }
+.rank-badge { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; font-size: 11px; font-weight: 700; }
+.r1 { background: var(--gold); color: var(--gold-text); }
+.r2 { background: var(--silver); color: var(--silver-text); }
+.r3 { background: var(--bronze); color: var(--bronze-text); }
+.rn { background: var(--bg2); color: var(--text2); }
+.pts-big { font-size: 18px; font-weight: 700; color: var(--blue); }
+.green-val { color: var(--green); font-weight: 600; }
+.blue-val { color: var(--blue); font-weight: 500; }
+
+/* TIP CHIPS */
+.chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+.chip { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 500; }
+.chip-exact { background: #E1F5EE; color: #0F6E56; border: 1px solid rgba(15,110,86,0.2); }
+.chip-dir { background: var(--blue-bg); color: var(--blue); border: 1px solid rgba(24,95,165,0.2); }
+.chip-miss { background: var(--red-bg); color: var(--red); border: 1px solid rgba(163,45,45,0.2); }
+.chip-none { background: var(--bg2); color: var(--text3); border: 1px solid var(--border); }
+
+/* MISC */
+.empty { text-align: center; padding: 2.5rem 1rem; color: var(--text2); font-size: 14px; }
+.empty-icon { font-size: 36px; margin-bottom: 8px; }
+.divider { border: none; border-top: 1px solid var(--border); margin: 1rem 0; }
+.info-box { background: var(--blue-bg); border-radius: var(--r); padding: 10px 14px; font-size: 13px; color: var(--blue); margin-bottom: 1rem; border: 1px solid rgba(24,95,165,0.15); line-height: 1.6; }
+.config-notice { background: var(--amber-bg); border-radius: var(--r); padding: 12px 16px; font-size: 13px; color: var(--amber); margin-bottom: 1rem; border: 1px solid rgba(186,117,23,0.2); line-height: 1.7; }
+.config-notice code { background: rgba(0,0,0,0.08); padding: 1px 5px; border-radius: 4px; font-family: monospace; font-size: 12px; }
+.loader { display: inline-block; width: 14px; height: 14px; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.saving-indicator { font-size: 12px; color: var(--green); display: none; margin-left: 8px; }
+
+/* SETUP SCREEN */
+.setup-screen { max-width: 480px; margin: 3rem auto; padding: 1.5rem; }
+.setup-screen .card { text-align: left; }
+.setup-screen h2 { font-size: 20px; font-weight: 700; margin-bottom: 0.5rem; }
+.setup-screen p { font-size: 14px; color: var(--text2); line-height: 1.6; margin-bottom: 1rem; }
+.code-block { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); padding: 12px; font-family: monospace; font-size: 12px; line-height: 1.7; color: var(--text); white-space: pre-wrap; margin-bottom: 1rem; overflow-x: auto; }
+.step { display: flex; gap: 12px; margin-bottom: 1rem; }
+.step-num { width: 24px; height: 24px; border-radius: 50%; background: var(--blue); color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+.step-content { font-size: 13px; line-height: 1.6; color: var(--text2); }
+.step-content strong { color: var(--text); }
+
+/* AVATAR COLORS */
+.av0{background:#E6F1FB;color:#0C447C} .av1{background:#E1F5EE;color:#085041} .av2{background:#FAEEDA;color:#412402}
+.av3{background:#FAECE7;color:#4A1B0C} .av4{background:#FBEAF0;color:#4B1528} .av5{background:#EAF3DE;color:#173404}
+.av6{background:#FCEBEB;color:#501313} .av7{background:#EEEDFE;color:#26215C} .av8{background:#E1F5EE;color:#085041}
+</style>
+</head>
+<body>
+
+<!-- SETUP SCREEN (shown when not configured) -->
+<div id="setupScreen" class="setup-screen" style="display:none;">
+  <div class="card">
+    <h2>⚙️ Nastavení Supabase</h2>
+    <p>Zadej přihlašovací údaje k tvému Supabase projektu. Najdeš je v Supabase dashboardu pod <strong>Settings → API</strong>.</p>
+    <div class="field">
+      <label>Supabase URL</label>
+      <input class="input" id="cfgUrl" placeholder="https://xxxxx.supabase.co" />
+    </div>
+    <div class="field">
+      <label>Anon Key (public)</label>
+      <input class="input" id="cfgKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." />
+    </div>
+    <button class="btn primary" style="width:100%; justify-content:center;" onclick="saveConfig()">Uložit a připojit</button>
+  </div>
+  <div class="card" style="margin-top:1rem;">
+    <div class="card-title">Jak nastavit Supabase</div>
+    <div class="step"><div class="step-num">1</div><div class="step-content">Jdi na <strong>supabase.com</strong>, vytvoř účet a nový projekt</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-content">V levém menu klikni na <strong>SQL Editor</strong> a spusť SQL níže</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-content">Jdi do <strong>Settings → API</strong> a zkopíruj URL a anon key sem</div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-content">Hotovo — aplikace se připojí a data budou sdílená pro všechny!</div></div>
+    <hr class="divider">
+    <div style="font-size:13px; font-weight:600; margin-bottom:8px;">SQL pro vytvoření tabulek (zkopíruj do SQL Editoru):</div>
+    <div class="code-block" id="sqlCode">-- Hráči
+CREATE TABLE players (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text UNIQUE NOT NULL,
+  created_at timestamptz DEFAULT now()
+);
+
+-- Tipy hráčů
+CREATE TABLE tips (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  player_name text NOT NULL REFERENCES players(name) ON DELETE CASCADE,
+  match_id text NOT NULL,
+  home_score integer,
+  away_score integer,
+  updated_at timestamptz DEFAULT now(),
+  UNIQUE(player_name, match_id)
+);
+
+-- Skutečné výsledky
+CREATE TABLE results (
+  match_id text PRIMARY KEY,
+  home_score integer,
+  away_score integer,
+  updated_at timestamptz DEFAULT now()
+);
+
+-- Veřejný přístup (Row Level Security)
+ALTER TABLE players ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tips ENABLE ROW LEVEL SECURITY;
+ALTER TABLE results ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "public read players" ON players FOR SELECT USING (true);
+CREATE POLICY "public insert players" ON players FOR INSERT WITH CHECK (true);
+CREATE POLICY "public delete players" ON players FOR DELETE USING (true);
+
+CREATE POLICY "public read tips" ON tips FOR SELECT USING (true);
+CREATE POLICY "public upsert tips" ON tips FOR INSERT WITH CHECK (true);
+CREATE POLICY "public update tips" ON tips FOR UPDATE USING (true);
+
+CREATE POLICY "public read results" ON results FOR SELECT USING (true);
+CREATE POLICY "public upsert results" ON results FOR INSERT WITH CHECK (true);
+CREATE POLICY "public update results" ON results FOR UPDATE USING (true);</div>
+    <button class="btn sm" onclick="copySQL()">📋 Kopírovat SQL</button>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="mainApp" style="display:none;">
+  <div class="app">
+    <div class="header">
+      <h1>⚽ MS 2026 — Tipovačka</h1>
+      <p>Tipuj zápasy, sbírej body, staň se šampionem</p>
+      <div class="pill">🇺🇸 USA · 🇨🇦 Kanada · 🇲🇽 Mexiko · 11.6–19.7.2026</div>
+    </div>
+
+    <div id="statusBar" class="status-bar connecting" style="margin:0; border-radius:0; border-left:none; border-right:none;">
+      <div class="dot pulse"></div>
+      <span id="statusText">Připojuji se k databázi...</span>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('players',this)">👤 Hráči</button>
+      <button class="tab" onclick="showTab('tips',this)">✏️ Tipy</button>
+      <button class="tab" onclick="showTab('results',this)">📋 Výsledky</button>
+      <button class="tab" onclick="showTab('ranking',this)">🏆 Tabulka</button>
+    </div>
+
+    <div class="content">
+
+      <!-- HRÁČI -->
+      <div id="players" class="section active">
+        <div class="card">
+          <div class="card-title">Přidat hráče</div>
+          <div style="display:flex;gap:8px;">
+            <input class="input" id="newName" placeholder="Tvoje jméno..." maxlength="30" onkeydown="if(event.key==='Enter')addPlayer()" style="flex:1;" />
+            <button class="btn primary" onclick="addPlayer()" id="addBtn">+ Přidat</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Registrovaní hráči <span id="playerCount">0 hráčů</span></div>
+          <div id="playerList"><div class="empty"><div class="empty-icon">👥</div>Zatím žádní hráči</div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Bodování</div>
+          <div style="font-size:14px; line-height:2; color:var(--text2);">
+            <span style="color:var(--blue); font-weight:700; font-size:18px;">3</span> body — přesný výsledek &nbsp;·&nbsp;
+            <span style="color:var(--blue); font-weight:700; font-size:18px;">1</span> bod — správný vítěz / remíza &nbsp;·&nbsp;
+            <span style="color:var(--text3); font-weight:700; font-size:18px;">0</span> bodů — špatný tip
+          </div>
+        </div>
+      </div>
+
+      <!-- TIPY -->
+      <div id="tips" class="section">
+        <div id="tipsPlayerBar"></div>
+        <div id="tipsContent"></div>
+      </div>
+
+      <!-- VÝSLEDKY -->
+      <div id="results" class="section">
+        <div class="info-box">📝 Tato záložka je pro pořadatele — zadej skutečné výsledky. Body se přepočítají automaticky pro všechny.</div>
+        <div id="resultsContent"></div>
+      </div>
+
+      <!-- TABULKA -->
+      <div id="ranking" class="section">
+        <div id="rankingContent"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── KONFIGURACE ────────────────────────────────────────────────
+// Buď nastav přímo zde, nebo přes setup screen
+const SUPABASE_URL = '';
+const SUPABASE_ANON_KEY = '';
+
+// ─── ZÁPASY ─────────────────────────────────────────────────────
+const MATCHES = [
+  {id:'m01',date:'12.6.',g:'A',h:'🇲🇽',a:'🇵🇱',hn:'Mexiko',an:'Polsko'},
+  {id:'m02',date:'13.6.',g:'A',h:'🇸🇦',a:'🇦🇷',hn:'S. Arábie',an:'Argentina'},
+  {id:'m03',date:'16.6.',g:'A',h:'🇲🇽',a:'🇸🇦',hn:'Mexiko',an:'S. Arábie'},
+  {id:'m04',date:'16.6.',g:'A',h:'🇵🇱',a:'🇦🇷',hn:'Polsko',an:'Argentina'},
+  {id:'m05',date:'20.6.',g:'A',h:'🇵🇱',a:'🇸🇦',hn:'Polsko',an:'S. Arábie'},
+  {id:'m06',date:'20.6.',g:'A',h:'🇦🇷',a:'🇲🇽',hn:'Argentina',an:'Mexiko'},
+  {id:'m07',date:'13.6.',g:'B',h:'🇺🇸',a:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',hn:'USA',an:'Anglie'},
+  {id:'m08',date:'14.6.',g:'B',h:'🇮🇷',a:'🏴󠁧󠁢󠁷󠁬󠁳󠁿',hn:'Írán',an:'Wales'},
+  {id:'m09',date:'17.6.',g:'B',h:'🏴󠁧󠁢󠁷󠁬󠁳󠁿',a:'🇺🇸',hn:'Wales',an:'USA'},
+  {id:'m10',date:'18.6.',g:'B',h:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',a:'🇮🇷',hn:'Anglie',an:'Írán'},
+  {id:'m11',date:'21.6.',g:'B',h:'🏴󠁧󠁢󠁷󠁬󠁳󠁿',a:'🇮🇷',hn:'Wales',an:'Írán'},
+  {id:'m12',date:'22.6.',g:'B',h:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',a:'🇺🇸',hn:'Anglie',an:'USA'},
+  {id:'m13',date:'14.6.',g:'C',h:'🇩🇰',a:'🇹🇳',hn:'Dánsko',an:'Tunisko'},
+  {id:'m14',date:'15.6.',g:'C',h:'🇫🇷',a:'🇦🇺',hn:'Francie',an:'Austrálie'},
+  {id:'m15',date:'18.6.',g:'C',h:'🇹🇳',a:'🇦🇺',hn:'Tunisko',an:'Austrálie'},
+  {id:'m16',date:'19.6.',g:'C',h:'🇫🇷',a:'🇩🇰',hn:'Francie',an:'Dánsko'},
+  {id:'m17',date:'23.6.',g:'C',h:'🇦🇺',a:'🇩🇰',hn:'Austrálie',an:'Dánsko'},
+  {id:'m18',date:'23.6.',g:'C',h:'🇹🇳',a:'🇫🇷',hn:'Tunisko',an:'Francie'},
+  {id:'m19',date:'15.6.',g:'D',h:'🇩🇪',a:'🇯🇵',hn:'Německo',an:'Japonsko'},
+  {id:'m20',date:'16.6.',g:'D',h:'🇨🇷',a:'🇪🇸',hn:'Kostarika',an:'Španělsko'},
+  {id:'m21',date:'19.6.',g:'D',h:'🇯🇵',a:'🇨🇷',hn:'Japonsko',an:'Kostarika'},
+  {id:'m22',date:'20.6.',g:'D',h:'🇪🇸',a:'🇩🇪',hn:'Španělsko',an:'Německo'},
+  {id:'m23',date:'24.6.',g:'D',h:'🇯🇵',a:'🇪🇸',hn:'Japonsko',an:'Španělsko'},
+  {id:'m24',date:'24.6.',g:'D',h:'🇨🇷',a:'🇩🇪',hn:'Kostarika',an:'Německo'},
+  {id:'m25',date:'16.6.',g:'E',h:'🇧🇪',a:'🇨🇦',hn:'Belgie',an:'Kanada'},
+  {id:'m26',date:'17.6.',g:'E',h:'🇭🇷',a:'🇲🇦',hn:'Chorvatsko',an:'Maroko'},
+  {id:'m27',date:'21.6.',g:'E',h:'🇧🇪',a:'🇭🇷',hn:'Belgie',an:'Chorvatsko'},
+  {id:'m28',date:'21.6.',g:'E',h:'🇲🇦',a:'🇨🇦',hn:'Maroko',an:'Kanada'},
+  {id:'m29',date:'25.6.',g:'E',h:'🇭🇷',a:'🇨🇦',hn:'Chorvatsko',an:'Kanada'},
+  {id:'m30',date:'25.6.',g:'E',h:'🇲🇦',a:'🇧🇪',hn:'Maroko',an:'Belgie'},
+  {id:'m31',date:'17.6.',g:'F',h:'🇧🇷',a:'🇷🇸',hn:'Brazílie',an:'Srbsko'},
+  {id:'m32',date:'18.6.',g:'F',h:'🇨🇭',a:'🇨🇲',hn:'Švýcarsko',an:'Kamerun'},
+  {id:'m33',date:'22.6.',g:'F',h:'🇧🇷',a:'🇨🇭',hn:'Brazílie',an:'Švýcarsko'},
+  {id:'m34',date:'22.6.',g:'F',h:'🇨🇲',a:'🇷🇸',hn:'Kamerun',an:'Srbsko'},
+  {id:'m35',date:'26.6.',g:'F',h:'🇧🇷',a:'🇨🇲',hn:'Brazílie',an:'Kamerun'},
+  {id:'m36',date:'26.6.',g:'F',h:'🇷🇸',a:'🇨🇭',hn:'Srbsko',an:'Švýcarsko'},
+  {id:'m37',date:'18.6.',g:'G',h:'🇵🇹',a:'🇬🇭',hn:'Portugalsko',an:'Ghana'},
+  {id:'m38',date:'19.6.',g:'G',h:'🇺🇾',a:'🇰🇷',hn:'Uruguay',an:'J. Korea'},
+  {id:'m39',date:'23.6.',g:'G',h:'🇵🇹',a:'🇺🇾',hn:'Portugalsko',an:'Uruguay'},
+  {id:'m40',date:'23.6.',g:'G',h:'🇬🇭',a:'🇰🇷',hn:'Ghana',an:'J. Korea'},
+  {id:'m41',date:'27.6.',g:'G',h:'🇬🇭',a:'🇺🇾',hn:'Ghana',an:'Uruguay'},
+  {id:'m42',date:'27.6.',g:'G',h:'🇰🇷',a:'🇵🇹',hn:'J. Korea',an:'Portugalsko'},
+  {id:'m43',date:'19.6.',g:'H',h:'🇳🇱',a:'🇸🇳',hn:'Holandsko',an:'Senegal'},
+  {id:'m44',date:'20.6.',g:'H',h:'🇪🇨',a:'🇶🇦',hn:'Ekvádor',an:'Katar'},
+  {id:'m45',date:'24.6.',g:'H',h:'🇳🇱',a:'🇪🇨',hn:'Holandsko',an:'Ekvádor'},
+  {id:'m46',date:'24.6.',g:'H',h:'🇸🇳',a:'🇶🇦',hn:'Senegal',an:'Katar'},
+  {id:'m47',date:'28.6.',g:'H',h:'🇶🇦',a:'🇳🇱',hn:'Katar',an:'Holandsko'},
+  {id:'m48',date:'28.6.',g:'H',h:'🇸🇳',a:'🇪🇨',hn:'Senegal',an:'Ekvádor'},
+];
+const GROUPS = [...new Set(MATCHES.map(m => m.g))];
+const AVATAR_COLORS = ['av0','av1','av2','av3','av4','av5','av6','av7','av8'];
+
+// ─── STATE ───────────────────────────────────────────────────────
+let supabase = null;
+let players = [];
+let tips = {};     // { playerName: { matchId: {h, a} } }
+let results = {};  // { matchId: {h, a} }
+let activePlayer = null;
+let saveTimers = {};
+
+// ─── INIT ────────────────────────────────────────────────────────
+function getConfig() {
+  const url = SUPABASE_URL || localStorage.getItem('sb_url') || '';
+  const key = SUPABASE_ANON_KEY || localStorage.getItem('sb_key') || '';
+  return { url, key };
+}
+
+function saveConfig() {
+  const url = document.getElementById('cfgUrl').value.trim();
+  const key = document.getElementById('cfgKey').value.trim();
+  if (!url || !key) { alert('Vyplň obě pole!'); return; }
+  localStorage.setItem('sb_url', url);
+  localStorage.setItem('sb_key', key);
+  location.reload();
+}
+
+function copySQL() {
+  const sql = document.getElementById('sqlCode').textContent;
+  navigator.clipboard.writeText(sql).then(() => alert('SQL zkopírováno!')).catch(() => {});
+}
+
+async function init() {
+  const { url, key } = getConfig();
+  if (!url || !key) {
+    document.getElementById('setupScreen').style.display = 'block';
+    return;
+  }
+  document.getElementById('mainApp').style.display = 'block';
+  try {
+    supabase = window.supabase.createClient(url, key);
+    await loadAll();
+    setStatus('ok', '✓ Připojeno k databázi');
+    subscribeRealtime();
+  } catch(e) {
+    setStatus('error', '✗ Chyba připojení — zkontroluj URL a klíč');
+    console.error(e);
+  }
+}
+
+function setStatus(type, text) {
+  const bar = document.getElementById('statusBar');
+  const dot = bar.querySelector('.dot');
+  bar.className = 'status-bar ' + type;
+  dot.className = 'dot' + (type === 'connecting' ? ' pulse' : '');
+  document.getElementById('statusText').textContent = text;
+}
+
+// ─── DATA LOADING ────────────────────────────────────────────────
+async function loadAll() {
+  const [{ data: pData }, { data: tData }, { data: rData }] = await Promise.all([
+    supabase.from('players').select('*').order('created_at'),
+    supabase.from('tips').select('*'),
+    supabase.from('results').select('*'),
+  ]);
+
+  players = (pData || []).map(p => p.name);
+
+  tips = {};
+  players.forEach(p => { tips[p] = {}; });
+  (tData || []).forEach(t => {
+    if (!tips[t.player_name]) tips[t.player_name] = {};
+    tips[t.player_name][t.match_id] = { h: t.home_score, a: t.away_score };
+  });
+
+  results = {};
+  (rData || []).forEach(r => {
+    results[r.match_id] = { h: r.home_score, a: r.away_score };
+  });
+
+  if (!activePlayer && players.length) activePlayer = players[0];
+  renderAll();
+}
+
+// ─── REALTIME ────────────────────────────────────────────────────
+function subscribeRealtime() {
+  supabase.channel('ms2026')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, () => loadAll())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'tips' }, (payload) => {
+      const t = payload.new;
+      if (t && t.player_name) {
+        if (!tips[t.player_name]) tips[t.player_name] = {};
+        tips[t.player_name][t.match_id] = { h: t.home_score, a: t.away_score };
+        renderRanking();
+      }
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'results' }, (payload) => {
+      const r = payload.new;
+      if (r) {
+        results[r.match_id] = { h: r.home_score, a: r.away_score };
+        renderRanking();
+      }
+    })
+    .subscribe();
+}
+
+// ─── HRÁČI ───────────────────────────────────────────────────────
+async function addPlayer() {
+  const v = document.getElementById('newName').value.trim();
+  if (!v) return;
+  const btn = document.getElementById('addBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loader"></span>';
+  const { error } = await supabase.from('players').insert({ name: v });
+  btn.disabled = false;
+  btn.innerHTML = '+ Přidat';
+  if (error) { alert(error.code === '23505' ? 'Hráč "' + v + '" již existuje!' : 'Chyba: ' + error.message); return; }
+  document.getElementById('newName').value = '';
+  await loadAll();
+}
+
+async function removePlayer(name) {
+  if (!confirm('Odebrat hráče "' + name + '"? Všechny jeho tipy budou smazány.')) return;
+  await supabase.from('players').delete().eq('name', name);
+  if (activePlayer === name) activePlayer = players.filter(p=>p!==name)[0] || null;
+  await loadAll();
+}
+
+function renderPlayerList() {
+  const el = document.getElementById('playerList');
+  document.getElementById('playerCount').textContent = players.length + (players.length === 1 ? ' hráč' : players.length < 5 ? ' hráči' : ' hráčů');
+  if (!players.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">👥</div>Zatím žádní hráči</div>'; return; }
+  el.innerHTML = players.map((p, i) => {
+    const filled = Object.values(tips[p]||{}).filter(t=>t.h!=null&&t.a!=null).length;
+    const initials = p.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    return `<div class="player-row">
+      <div class="avatar ${AVATAR_COLORS[i % AVATAR_COLORS.length]}">${initials}</div>
+      <div class="player-info">
+        <div class="player-name">${p}</div>
+        <div class="player-meta">${filled} / ${MATCHES.length} tipů zadáno</div>
+      </div>
+      <button class="btn danger sm" onclick="removePlayer('${esc(p)}')">Odebrat</button>
+    </div>`;
+  }).join('');
+}
+
+// ─── TIPY ────────────────────────────────────────────────────────
+function renderTipsPlayerBar() {
+  const el = document.getElementById('tipsPlayerBar');
+  if (!players.length) { el.innerHTML = '<div class="card"><div class="empty"><div class="empty-icon">👆</div>Nejprve přidej hráče na záložce Hráči</div></div>'; return; }
+  if (!activePlayer || !players.includes(activePlayer)) activePlayer = players[0];
+  const t = tips[activePlayer] || {};
+  const filled = Object.values(t).filter(x=>x.h!=null&&x.a!=null).length;
+  const pct = Math.round(filled / MATCHES.length * 100);
+  el.innerHTML = `<div class="card" style="margin-bottom:1rem;">
+    <div style="font-size:12px;color:var(--text2);margin-bottom:8px;font-weight:500;">TIPY ZA HRÁČE:</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;">
+      ${players.map((p,i)=>{
+        const initials = p.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+        return `<button class="btn sm ${p===activePlayer?'active':''}" onclick="setActivePlayer('${esc(p)}')" style="gap:6px;">
+          <span style="width:20px;height:20px;border-radius:50%;background:var(--${p===activePlayer?'blue-dark':'bg3'});color:${p===activePlayer?'#fff':'var(--text2)'};font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;">${initials}</span>
+          ${p}
+        </button>`;
+      }).join('')}
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+      <span style="font-size:12px;color:var(--text2);">${filled} / ${MATCHES.length} tipů</span>
+      <span style="font-size:12px;font-weight:600;color:var(--blue);">${pct}%</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="tipProgress" style="width:${pct}%"></div></div>
+  </div>`;
+}
+
+function setActivePlayer(name) { activePlayer = name; renderTips(); }
+
+function renderTipsContent() {
+  const el = document.getElementById('tipsContent');
+  if (!activePlayer) { el.innerHTML = ''; return; }
+  const t = tips[activePlayer] || {};
+  el.innerHTML = GROUPS.map(g => {
+    const gm = MATCHES.filter(m => m.g === g);
+    return `<div class="card">
+      <div class="group-header">
+        <div class="group-label">Skupina ${g}</div>
+        <div class="group-badge">${gm.filter(m=>{ const x=t[m.id]; return x&&x.h!=null&&x.a!=null; }).length}/${gm.length}</div>
+      </div>
+      ${gm.map(m => {
+        const tip = t[m.id] || {};
+        const res = results[m.id];
+        const pt = res ? calcPts(tip, res) : null;
+        const chipHtml = pt===3?'<span class="chip chip-exact">+3</span>':pt===1?'<span class="chip chip-dir">+1</span>':pt===0?'<span class="chip chip-miss">0</span>':'';
+        return `<div class="match-row">
+          <div class="team"><span class="flag">${m.h}</span><span class="team-name">${m.hn}</span></div>
+          <div class="score-wrap">
+            <div class="score-inputs">
+              <input class="score-inp" type="number" min="0" max="30" value="${tip.h!=null?tip.h:''}" placeholder="–" 
+                onchange="queueTip('${m.id}','h',this.value,this)" />
+              <span class="score-sep">:</span>
+              <input class="score-inp" type="number" min="0" max="30" value="${tip.a!=null?tip.a:''}" placeholder="–"
+                onchange="queueTip('${m.id}','a',this.value,this)" />
+            </div>
+            <div class="match-date">${m.date} ${chipHtml}</div>
+          </div>
+          <div class="team right"><span class="flag">${m.a}</span><span class="team-name">${m.an}</span></div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+}
+
+function renderTips() { renderTipsPlayerBar(); renderTipsContent(); }
+
+function queueTip(matchId, side, val, inputEl) {
+  if (!activePlayer) return;
+  if (!tips[activePlayer]) tips[activePlayer] = {};
+  if (!tips[activePlayer][matchId]) tips[activePlayer][matchId] = {};
+  tips[activePlayer][matchId][side] = val === '' ? null : parseInt(val);
+  inputEl.classList.add('saved');
+  setTimeout(() => inputEl.classList.remove('saved'), 1500);
+
+  const key = activePlayer + '_' + matchId;
+  clearTimeout(saveTimers[key]);
+  saveTimers[key] = setTimeout(() => flushTip(activePlayer, matchId), 800);
+
+  updateProgressBar();
+}
+
+async function flushTip(playerName, matchId) {
+  const tip = (tips[playerName] || {})[matchId] || {};
+  await supabase.from('tips').upsert({
+    player_name: playerName,
+    match_id: matchId,
+    home_score: tip.h != null ? tip.h : null,
+    away_score: tip.a != null ? tip.a : null,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'player_name,match_id' });
+}
+
+function updateProgressBar() {
+  const t = tips[activePlayer] || {};
+  const filled = Object.values(t).filter(x=>x.h!=null&&x.a!=null).length;
+  const pct = Math.round(filled/MATCHES.length*100);
+  const bar = document.getElementById('tipProgress');
+  if (bar) bar.style.width = pct + '%';
+  const cnt = document.querySelector('#tipsPlayerBar [style*="tipProgress"]');
+}
+
+// ─── VÝSLEDKY ────────────────────────────────────────────────────
+function renderResults() {
+  const el = document.getElementById('resultsContent');
+  el.innerHTML = GROUPS.map(g => {
+    const gm = MATCHES.filter(m => m.g === g);
+    return `<div class="card">
+      <div class="group-header">
+        <div class="group-label">Skupina ${g}</div>
+        <div class="group-badge">${gm.filter(m=>results[m.id]?.h!=null).length}/${gm.length} zadáno</div>
+      </div>
+      ${gm.map(m => {
+        const r = results[m.id] || {};
+        return `<div class="match-row">
+          <div class="team"><span class="flag">${m.h}</span><span class="team-name">${m.hn}</span></div>
+          <div class="score-wrap">
+            <div class="score-inputs">
+              <input class="score-inp result" type="number" min="0" max="30" value="${r.h!=null?r.h:''}" placeholder="–"
+                onchange="queueResult('${m.id}','h',this.value,this)" />
+              <span class="score-sep">:</span>
+              <input class="score-inp result" type="number" min="0" max="30" value="${r.a!=null?r.a:''}" placeholder="–"
+                onchange="queueResult('${m.id}','a',this.value,this)" />
+            </div>
+            <div class="match-date">${m.date}</div>
+          </div>
+          <div class="team right"><span class="flag">${m.a}</span><span class="team-name">${m.an}</span></div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+}
+
+function queueResult(matchId, side, val, inputEl) {
+  if (!results[matchId]) results[matchId] = {};
+  results[matchId][side] = val === '' ? null : parseInt(val);
+  inputEl.classList.add('saved');
+  setTimeout(() => inputEl.classList.remove('saved'), 1500);
+  clearTimeout(saveTimers['result_' + matchId]);
+  saveTimers['result_' + matchId] = setTimeout(() => flushResult(matchId), 800);
+  renderRanking();
+}
+
+async function flushResult(matchId) {
+  const r = results[matchId] || {};
+  await supabase.from('results').upsert({
+    match_id: matchId,
+    home_score: r.h != null ? r.h : null,
+    away_score: r.a != null ? r.a : null,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'match_id' });
+}
+
+// ─── TABULKA ─────────────────────────────────────────────────────
+function calcPts(tip, result) {
+  if (tip.h==null||tip.a==null||result.h==null||result.a==null) return null;
+  if (tip.h===result.h && tip.a===result.a) return 3;
+  if (Math.sign(tip.h-tip.a) === Math.sign(result.h-result.a)) return 1;
+  return 0;
+}
+
+function renderRanking() {
+  const el = document.getElementById('rankingContent');
+  if (!players.length) { el.innerHTML = '<div class="card"><div class="empty"><div class="empty-icon">🏆</div>Zatím žádní hráči</div></div>'; return; }
+
+  const playedMatches = MATCHES.filter(m => results[m.id]?.h != null);
+  const rows = players.map((p, i) => {
+    let pts=0, exact=0, dir=0, miss=0;
+    playedMatches.forEach(m => {
+      const tip = (tips[p]||{})[m.id]||{};
+      const pt = calcPts(tip, results[m.id]);
+      if (pt===3){pts+=3;exact++;}
+      else if(pt===1){pts+=1;dir++;}
+      else if(pt===0){miss++;}
+    });
+    return {name:p, pts, exact, dir, miss, idx:i};
+  }).sort((a,b)=>b.pts-a.pts||b.exact-a.exact);
+
+  el.innerHTML = `
+    <div class="card">
+      <div class="card-title">Pořadí <span>${playedMatches.length} / ${MATCHES.length} zápasů odehráno</span></div>
+      <table class="rank-table">
+        <thead><tr><th>#</th><th>Hráč</th><th>Body</th><th>Přesně</th><th>Směr</th><th>Špatně</th></tr></thead>
+        <tbody>${rows.map((r,i) => {
+          const cls = i===0?'r1':i===1?'r2':i===2?'r3':'rn';
+          const initials = r.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+          return `<tr>
+            <td><span class="rank-badge ${cls}">${i+1}</span></td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span class="avatar ${AVATAR_COLORS[r.idx%AVATAR_COLORS.length]}" style="width:28px;height:28px;font-size:10px;">${initials}</span>
+                <span style="font-weight:500">${r.name}</span>
+              </div>
+            </td>
+            <td><span class="pts-big">${r.pts}</span></td>
+            <td><span class="green-val">${r.exact}×</span></td>
+            <td><span class="blue-val">${r.dir}×</span></td>
+            <td style="color:var(--text3)">${r.miss}×</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>
+    </div>
+    ${playedMatches.length > 0 ? `
+    <div class="card">
+      <div class="card-title">Poslední výsledky</div>
+      ${[...playedMatches].reverse().slice(0,8).map(m => {
+        const r = results[m.id];
+        return `<div style="padding:10px 0;border-bottom:1px solid var(--border);">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <span style="font-size:13px;">${m.h} ${m.hn}</span>
+            <span style="font-weight:700;background:var(--bg2);padding:2px 10px;border-radius:6px;font-size:14px;">${r.h}:${r.a}</span>
+            <span style="font-size:13px;">${m.an} ${m.a}</span>
+          </div>
+          <div class="chips">${rows.map(row => {
+            const tip = (tips[row.name]||{})[m.id]||{};
+            const pt = calcPts(tip, r);
+            const tipStr = tip.h!=null&&tip.a!=null ? tip.h+':'+tip.a : '—';
+            const cls = pt===3?'chip-exact':pt===1?'chip-dir':pt===0?'chip-miss':'chip-none';
+            return `<span class="chip ${cls}">${row.name}: ${tipStr}${pt!=null?' (+'+pt+')':''}</span>`;
+          }).join('')}</div>
+        </div>`;
+      }).join('')}
+    </div>` : '<div class="card"><div class="empty"><div class="empty-icon">⏳</div>Výsledky se zobrazí po zadání prvního zápasu</div></div>'}
+  `;
+}
+
+// ─── HELPERS ─────────────────────────────────────────────────────
+function esc(s) { return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+function renderAll() { renderPlayerList(); renderTips(); renderResults(); renderRanking(); }
+
+function showTab(tab, btn) {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(tab).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (tab==='tips') renderTips();
+  if (tab==='results') renderResults();
+  if (tab==='ranking') renderRanking();
+}
+
+// ─── START ───────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
