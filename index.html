@@ -360,7 +360,7 @@ const GROUPS = [...new Set(MATCHES.map(m => m.g))];
 const AVATAR_COLORS = ['av0','av1','av2','av3','av4','av5','av6','av7','av8'];
 
 // ─── STATE ───────────────────────────────────────────────────────
-let supabase = null;
+let sbClient = null;
 let players = [];
 let tips = {};     // { playerName: { matchId: {h, a} } }
 let results = {};  // { matchId: {h, a} }
@@ -396,7 +396,7 @@ async function init() {
   }
   document.getElementById('mainApp').style.display = 'block';
   try {
-    supabase = window.supabase.createClient(url, key);
+    sbClient = window.supabase.createClient(url, key);
     await loadAll();
     setStatus('ok', '✓ Připojeno k databázi');
     subscribeRealtime();
@@ -417,9 +417,9 @@ function setStatus(type, text) {
 // ─── DATA LOADING ────────────────────────────────────────────────
 async function loadAll() {
   const [{ data: pData }, { data: tData }, { data: rData }] = await Promise.all([
-    supabase.from('players').select('*').order('created_at'),
-    supabase.from('tips').select('*'),
-    supabase.from('results').select('*'),
+    sbClient.from('players').select('*').order('created_at'),
+    sbClient.from('tips').select('*'),
+    sbClient.from('results').select('*'),
   ]);
 
   players = (pData || []).map(p => p.name);
@@ -442,7 +442,7 @@ async function loadAll() {
 
 // ─── REALTIME ────────────────────────────────────────────────────
 function subscribeRealtime() {
-  supabase.channel('ms2026')
+  sbClient.channel('ms2026')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, () => loadAll())
     .on('postgres_changes', { event: '*', schema: 'public', table: 'tips' }, (payload) => {
       const t = payload.new;
@@ -469,7 +469,7 @@ async function addPlayer() {
   const btn = document.getElementById('addBtn');
   btn.disabled = true;
   btn.innerHTML = '<span class="loader"></span>';
-  const { error } = await supabase.from('players').insert({ name: v });
+  const { error } = await sbClient.from('players').insert({ name: v });
   btn.disabled = false;
   btn.innerHTML = '+ Přidat';
   if (error) { alert(error.code === '23505' ? 'Hráč "' + v + '" již existuje!' : 'Chyba: ' + error.message); return; }
@@ -479,7 +479,7 @@ async function addPlayer() {
 
 async function removePlayer(name) {
   if (!confirm('Odebrat hráče "' + name + '"? Všechny jeho tipy budou smazány.')) return;
-  await supabase.from('players').delete().eq('name', name);
+  await sbClient.from('players').delete().eq('name', name);
   if (activePlayer === name) activePlayer = players.filter(p=>p!==name)[0] || null;
   await loadAll();
 }
@@ -585,7 +585,7 @@ function queueTip(matchId, side, val, inputEl) {
 
 async function flushTip(playerName, matchId) {
   const tip = (tips[playerName] || {})[matchId] || {};
-  await supabase.from('tips').upsert({
+  await sbClient.from('tips').upsert({
     player_name: playerName,
     match_id: matchId,
     home_score: tip.h != null ? tip.h : null,
@@ -646,7 +646,7 @@ function queueResult(matchId, side, val, inputEl) {
 
 async function flushResult(matchId) {
   const r = results[matchId] || {};
-  await supabase.from('results').upsert({
+  await sbClient.from('results').upsert({
     match_id: matchId,
     home_score: r.h != null ? r.h : null,
     away_score: r.a != null ? r.a : null,
