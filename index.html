@@ -170,11 +170,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     <p>Zadej přihlašovací údaje k tvému Supabase projektu. Najdeš je v Supabase dashboardu pod <strong>Settings → API</strong>.</p>
     <div class="field">
       <label>Supabase URL</label>
-      <input class="input" id="cfgUrl" placeholder="https://xxxxx.supabase.co" />
+      <input class="input" id="cfgUrl" placeholder="" />
     </div>
     <div class="field">
       <label>Anon Key (public)</label>
-      <input class="input" id="cfgKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." />
+      <input class="input" id="cfgKey" placeholder="" />
     </div>
     <button class="btn primary" style="width:100%; justify-content:center;" onclick="saveConfig()">Uložit a připojit</button>
   </div>
@@ -302,8 +302,8 @@ CREATE POLICY "public update results" ON results FOR UPDATE USING (true);</div>
 <script>
 // ─── KONFIGURACE ────────────────────────────────────────────────
 // Buď nastav přímo zde, nebo přes setup screen
-const SUPABASE_URL = '';
-const SUPABASE_ANON_KEY = '';
+const SUPABASE_URL = 'https://zydzvzdnirofiphuhfyx.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp5ZHp2emRuaXJvZmlwaHVoZnl4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1NTM0OTEsImV4cCI6MjA5NjEyOTQ5MX0.LCLGZ8ThAH0VM73Mv6u50-86XAKDNn2GT-L5mbli3Mw';
 
 // ─── ZÁPASY ─────────────────────────────────────────────────────
 // Všech 72 zápasů skupinové fáze MS 2026 - správné losování
