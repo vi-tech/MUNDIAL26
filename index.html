@@ -302,61 +302,98 @@ CREATE POLICY "public update results" ON results FOR UPDATE USING (true);</div>
 <script>
 // ─── KONFIGURACE ────────────────────────────────────────────────
 // Buď nastav přímo zde, nebo přes setup screen
-const SUPABASE_URL = 'https://jgaxlprwseljcnlrjlvv.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpnYXhscHJ3c2VsamNubHJqbHZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MzgwMDksImV4cCI6MjA5NjExNDAwOX0.b85kD3cqOT3RuEDkTMHLOhDeEPhdWM0jj_ScCfVjh9g';
+const SUPABASE_URL = '';
+const SUPABASE_ANON_KEY = '';
 
 // ─── ZÁPASY ─────────────────────────────────────────────────────
+// Všech 72 zápasů skupinové fáze MS 2026 - správné losování
 const MATCHES = [
-  {id:'m01',date:'12.6.',g:'A',h:'🇲🇽',a:'🇵🇱',hn:'Mexiko',an:'Polsko'},
-  {id:'m02',date:'13.6.',g:'A',h:'🇸🇦',a:'🇦🇷',hn:'S. Arábie',an:'Argentina'},
-  {id:'m03',date:'16.6.',g:'A',h:'🇲🇽',a:'🇸🇦',hn:'Mexiko',an:'S. Arábie'},
-  {id:'m04',date:'16.6.',g:'A',h:'🇵🇱',a:'🇦🇷',hn:'Polsko',an:'Argentina'},
-  {id:'m05',date:'20.6.',g:'A',h:'🇵🇱',a:'🇸🇦',hn:'Polsko',an:'S. Arábie'},
-  {id:'m06',date:'20.6.',g:'A',h:'🇦🇷',a:'🇲🇽',hn:'Argentina',an:'Mexiko'},
-  {id:'m07',date:'13.6.',g:'B',h:'🇺🇸',a:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',hn:'USA',an:'Anglie'},
-  {id:'m08',date:'14.6.',g:'B',h:'🇮🇷',a:'🏴󠁧󠁢󠁷󠁬󠁳󠁿',hn:'Írán',an:'Wales'},
-  {id:'m09',date:'17.6.',g:'B',h:'🏴󠁧󠁢󠁷󠁬󠁳󠁿',a:'🇺🇸',hn:'Wales',an:'USA'},
-  {id:'m10',date:'18.6.',g:'B',h:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',a:'🇮🇷',hn:'Anglie',an:'Írán'},
-  {id:'m11',date:'21.6.',g:'B',h:'🏴󠁧󠁢󠁷󠁬󠁳󠁿',a:'🇮🇷',hn:'Wales',an:'Írán'},
-  {id:'m12',date:'22.6.',g:'B',h:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',a:'🇺🇸',hn:'Anglie',an:'USA'},
-  {id:'m13',date:'14.6.',g:'C',h:'🇩🇰',a:'🇹🇳',hn:'Dánsko',an:'Tunisko'},
-  {id:'m14',date:'15.6.',g:'C',h:'🇫🇷',a:'🇦🇺',hn:'Francie',an:'Austrálie'},
-  {id:'m15',date:'18.6.',g:'C',h:'🇹🇳',a:'🇦🇺',hn:'Tunisko',an:'Austrálie'},
-  {id:'m16',date:'19.6.',g:'C',h:'🇫🇷',a:'🇩🇰',hn:'Francie',an:'Dánsko'},
-  {id:'m17',date:'23.6.',g:'C',h:'🇦🇺',a:'🇩🇰',hn:'Austrálie',an:'Dánsko'},
-  {id:'m18',date:'23.6.',g:'C',h:'🇹🇳',a:'🇫🇷',hn:'Tunisko',an:'Francie'},
-  {id:'m19',date:'15.6.',g:'D',h:'🇩🇪',a:'🇯🇵',hn:'Německo',an:'Japonsko'},
-  {id:'m20',date:'16.6.',g:'D',h:'🇨🇷',a:'🇪🇸',hn:'Kostarika',an:'Španělsko'},
-  {id:'m21',date:'19.6.',g:'D',h:'🇯🇵',a:'🇨🇷',hn:'Japonsko',an:'Kostarika'},
-  {id:'m22',date:'20.6.',g:'D',h:'🇪🇸',a:'🇩🇪',hn:'Španělsko',an:'Německo'},
-  {id:'m23',date:'24.6.',g:'D',h:'🇯🇵',a:'🇪🇸',hn:'Japonsko',an:'Španělsko'},
-  {id:'m24',date:'24.6.',g:'D',h:'🇨🇷',a:'🇩🇪',hn:'Kostarika',an:'Německo'},
-  {id:'m25',date:'16.6.',g:'E',h:'🇧🇪',a:'🇨🇦',hn:'Belgie',an:'Kanada'},
-  {id:'m26',date:'17.6.',g:'E',h:'🇭🇷',a:'🇲🇦',hn:'Chorvatsko',an:'Maroko'},
-  {id:'m27',date:'21.6.',g:'E',h:'🇧🇪',a:'🇭🇷',hn:'Belgie',an:'Chorvatsko'},
-  {id:'m28',date:'21.6.',g:'E',h:'🇲🇦',a:'🇨🇦',hn:'Maroko',an:'Kanada'},
-  {id:'m29',date:'25.6.',g:'E',h:'🇭🇷',a:'🇨🇦',hn:'Chorvatsko',an:'Kanada'},
-  {id:'m30',date:'25.6.',g:'E',h:'🇲🇦',a:'🇧🇪',hn:'Maroko',an:'Belgie'},
-  {id:'m31',date:'17.6.',g:'F',h:'🇧🇷',a:'🇷🇸',hn:'Brazílie',an:'Srbsko'},
-  {id:'m32',date:'18.6.',g:'F',h:'🇨🇭',a:'🇨🇲',hn:'Švýcarsko',an:'Kamerun'},
-  {id:'m33',date:'22.6.',g:'F',h:'🇧🇷',a:'🇨🇭',hn:'Brazílie',an:'Švýcarsko'},
-  {id:'m34',date:'22.6.',g:'F',h:'🇨🇲',a:'🇷🇸',hn:'Kamerun',an:'Srbsko'},
-  {id:'m35',date:'26.6.',g:'F',h:'🇧🇷',a:'🇨🇲',hn:'Brazílie',an:'Kamerun'},
-  {id:'m36',date:'26.6.',g:'F',h:'🇷🇸',a:'🇨🇭',hn:'Srbsko',an:'Švýcarsko'},
-  {id:'m37',date:'18.6.',g:'G',h:'🇵🇹',a:'🇬🇭',hn:'Portugalsko',an:'Ghana'},
-  {id:'m38',date:'19.6.',g:'G',h:'🇺🇾',a:'🇰🇷',hn:'Uruguay',an:'J. Korea'},
-  {id:'m39',date:'23.6.',g:'G',h:'🇵🇹',a:'🇺🇾',hn:'Portugalsko',an:'Uruguay'},
-  {id:'m40',date:'23.6.',g:'G',h:'🇬🇭',a:'🇰🇷',hn:'Ghana',an:'J. Korea'},
-  {id:'m41',date:'27.6.',g:'G',h:'🇬🇭',a:'🇺🇾',hn:'Ghana',an:'Uruguay'},
-  {id:'m42',date:'27.6.',g:'G',h:'🇰🇷',a:'🇵🇹',hn:'J. Korea',an:'Portugalsko'},
-  {id:'m43',date:'19.6.',g:'H',h:'🇳🇱',a:'🇸🇳',hn:'Holandsko',an:'Senegal'},
-  {id:'m44',date:'20.6.',g:'H',h:'🇪🇨',a:'🇶🇦',hn:'Ekvádor',an:'Katar'},
-  {id:'m45',date:'24.6.',g:'H',h:'🇳🇱',a:'🇪🇨',hn:'Holandsko',an:'Ekvádor'},
-  {id:'m46',date:'24.6.',g:'H',h:'🇸🇳',a:'🇶🇦',hn:'Senegal',an:'Katar'},
-  {id:'m47',date:'28.6.',g:'H',h:'🇶🇦',a:'🇳🇱',hn:'Katar',an:'Holandsko'},
-  {id:'m48',date:'28.6.',g:'H',h:'🇸🇳',a:'🇪🇨',hn:'Senegal',an:'Ekvádor'},
-];
-const GROUPS = [...new Set(MATCHES.map(m => m.g))];
+  // SKUPINA A: Mexiko, Jihoafrická republika, Jižní Korea, Česko
+  {id:'a1',date:'11.6.',g:'A',h:'🇲🇽',a:'🇿🇦',hn:'Mexiko',an:'J. Afrika'},
+  {id:'a2',date:'12.6.',g:'A',h:'🇰🇷',a:'🇨🇿',hn:'Jižní Korea',an:'Česko'},
+  {id:'a3',date:'18.6.',g:'A',h:'🇨🇿',a:'🇿🇦',hn:'Česko',an:'J. Afrika'},
+  {id:'a4',date:'19.6.',g:'A',h:'🇲🇽',a:'🇰🇷',hn:'Mexiko',an:'Jižní Korea'},
+  {id:'a5',date:'25.6.',g:'A',h:'🇨🇿',a:'🇲🇽',hn:'Česko',an:'Mexiko'},
+  {id:'a6',date:'25.6.',g:'A',h:'🇿🇦',a:'🇰🇷',hn:'J. Afrika',an:'Jižní Korea'},
+  // SKUPINA B: Kanada, Bosna a Hercegovina, Katar, Švýcarsko
+  {id:'b1',date:'12.6.',g:'B',h:'🇨🇦',a:'🇧🇦',hn:'Kanada',an:'Bosna'},
+  {id:'b2',date:'13.6.',g:'B',h:'🇶🇦',a:'🇨🇭',hn:'Katar',an:'Švýcarsko'},
+  {id:'b3',date:'18.6.',g:'B',h:'🇨🇭',a:'🇧🇦',hn:'Švýcarsko',an:'Bosna'},
+  {id:'b4',date:'19.6.',g:'B',h:'🇨🇦',a:'🇶🇦',hn:'Kanada',an:'Katar'},
+  {id:'b5',date:'24.6.',g:'B',h:'🇨🇭',a:'🇨🇦',hn:'Švýcarsko',an:'Kanada'},
+  {id:'b6',date:'24.6.',g:'B',h:'🇧🇦',a:'🇶🇦',hn:'Bosna',an:'Katar'},
+  // SKUPINA C: Brazílie, Maroko, Haiti, Skotsko
+  {id:'c1',date:'14.6.',g:'C',h:'🇧🇷',a:'🇲🇦',hn:'Brazílie',an:'Maroko'},
+  {id:'c2',date:'14.6.',g:'C',h:'🇭🇹',a:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',hn:'Haiti',an:'Skotsko'},
+  {id:'c3',date:'20.6.',g:'C',h:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',a:'🇲🇦',hn:'Skotsko',an:'Maroko'},
+  {id:'c4',date:'20.6.',g:'C',h:'🇧🇷',a:'🇭🇹',hn:'Brazílie',an:'Haiti'},
+  {id:'c5',date:'25.6.',g:'C',h:'🇲🇦',a:'🇭🇹',hn:'Maroko',an:'Haiti'},
+  {id:'c6',date:'25.6.',g:'C',h:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',a:'🇧🇷',hn:'Skotsko',an:'Brazílie'},
+  // SKUPINA D: USA, Paraguay, Austrálie, Turecko
+  {id:'d1',date:'13.6.',g:'D',h:'🇺🇸',a:'🇵🇾',hn:'USA',an:'Paraguay'},
+  {id:'d2',date:'14.6.',g:'D',h:'🇦🇺',a:'🇹🇷',hn:'Austrálie',an:'Turecko'},
+  {id:'d3',date:'19.6.',g:'D',h:'🇺🇸',a:'🇦🇺',hn:'USA',an:'Austrálie'},
+  {id:'d4',date:'20.6.',g:'D',h:'🇹🇷',a:'🇵🇾',hn:'Turecko',an:'Paraguay'},
+  {id:'d5',date:'26.6.',g:'D',h:'🇹🇷',a:'🇺🇸',hn:'Turecko',an:'USA'},
+  {id:'d6',date:'26.6.',g:'D',h:'🇵🇾',a:'🇦🇺',hn:'Paraguay',an:'Austrálie'},
+  // SKUPINA E: Německo, Curaçao, Pobřeží slonoviny, Ekvádor
+  {id:'e1',date:'14.6.',g:'E',h:'🇩🇪',a:'🇨🇼',hn:'Německo',an:'Curaçao'},
+  {id:'e2',date:'15.6.',g:'E',h:'🇨🇮',a:'🇪🇨',hn:'P. slonoviny',an:'Ekvádor'},
+  {id:'e3',date:'20.6.',g:'E',h:'🇩🇪',a:'🇨🇮',hn:'Německo',an:'P. slonoviny'},
+  {id:'e4',date:'21.6.',g:'E',h:'🇪🇨',a:'🇨🇼',hn:'Ekvádor',an:'Curaçao'},
+  {id:'e5',date:'25.6.',g:'E',h:'🇨🇼',a:'🇨🇮',hn:'Curaçao',an:'P. slonoviny'},
+  {id:'e6',date:'25.6.',g:'E',h:'🇪🇨',a:'🇩🇪',hn:'Ekvádor',an:'Německo'},
+  // SKUPINA F: Nizozemsko, Japonsko, Švédsko, Tunisko
+  {id:'f1',date:'14.6.',g:'F',h:'🇳🇱',a:'🇯🇵',hn:'Nizozemsko',an:'Japonsko'},
+  {id:'f2',date:'15.6.',g:'F',h:'🇸🇪',a:'🇹🇳',hn:'Švédsko',an:'Tunisko'},
+  {id:'f3',date:'20.6.',g:'F',h:'🇳🇱',a:'🇸🇪',hn:'Nizozemsko',an:'Švédsko'},
+  {id:'f4',date:'21.6.',g:'F',h:'🇹🇳',a:'🇯🇵',hn:'Tunisko',an:'Japonsko'},
+  {id:'f5',date:'26.6.',g:'F',h:'🇯🇵',a:'🇸🇪',hn:'Japonsko',an:'Švédsko'},
+  {id:'f6',date:'26.6.',g:'F',h:'🇹🇳',a:'🇳🇱',hn:'Tunisko',an:'Nizozemsko'},
+  // SKUPINA G: Belgie, Egypt, Írán, Nový Zéland
+  {id:'g1',date:'15.6.',g:'G',h:'🇧🇪',a:'🇪🇬',hn:'Belgie',an:'Egypt'},
+  {id:'g2',date:'16.6.',g:'G',h:'🇮🇷',a:'🇳🇿',hn:'Írán',an:'Nový Zéland'},
+  {id:'g3',date:'21.6.',g:'G',h:'🇧🇪',a:'🇮🇷',hn:'Belgie',an:'Írán'},
+  {id:'g4',date:'22.6.',g:'G',h:'🇳🇿',a:'🇪🇬',hn:'Nový Zéland',an:'Egypt'},
+  {id:'g5',date:'27.6.',g:'G',h:'🇧🇪',a:'🇳🇿',hn:'Belgie',an:'Nový Zéland'},
+  {id:'g6',date:'27.6.',g:'G',h:'🇪🇬',a:'🇮🇷',hn:'Egypt',an:'Írán'},
+  // SKUPINA H: Španělsko, Kapverdy, Saúdská Arábie, Uruguay
+  {id:'h1',date:'15.6.',g:'H',h:'🇪🇸',a:'🇨🇻',hn:'Španělsko',an:'Kapverdy'},
+  {id:'h2',date:'16.6.',g:'H',h:'🇸🇦',a:'🇺🇾',hn:'S. Arábie',an:'Uruguay'},
+  {id:'h3',date:'21.6.',g:'H',h:'🇪🇸',a:'🇸🇦',hn:'Španělsko',an:'S. Arábie'},
+  {id:'h4',date:'22.6.',g:'H',h:'🇺🇾',a:'🇨🇻',hn:'Uruguay',an:'Kapverdy'},
+  {id:'h5',date:'27.6.',g:'H',h:'🇪🇸',a:'🇺🇾',hn:'Španělsko',an:'Uruguay'},
+  {id:'h6',date:'27.6.',g:'H',h:'🇨🇻',a:'🇸🇦',hn:'Kapverdy',an:'S. Arábie'},
+  // SKUPINA I: Francie, Senegal, Irák, Norsko
+  {id:'i1',date:'16.6.',g:'I',h:'🇫🇷',a:'🇸🇳',hn:'Francie',an:'Senegal'},
+  {id:'i2',date:'17.6.',g:'I',h:'🇮🇶',a:'🇳🇴',hn:'Irák',an:'Norsko'},
+  {id:'i3',date:'22.6.',g:'I',h:'🇫🇷',a:'🇮🇶',hn:'Francie',an:'Irák'},
+  {id:'i4',date:'23.6.',g:'I',h:'🇳🇴',a:'🇸🇳',hn:'Norsko',an:'Senegal'},
+  {id:'i5',date:'26.6.',g:'I',h:'🇳🇴',a:'🇫🇷',hn:'Norsko',an:'Francie'},
+  {id:'i6',date:'26.6.',g:'I',h:'🇸🇳',a:'🇮🇶',hn:'Senegal',an:'Irák'},
+  // SKUPINA J: Argentina, Alžírsko, Rakousko, Jordánsko
+  {id:'j1',date:'17.6.',g:'J',h:'🇦🇷',a:'🇩🇿',hn:'Argentina',an:'Alžírsko'},
+  {id:'j2',date:'17.6.',g:'J',h:'🇦🇹',a:'🇯🇴',hn:'Rakousko',an:'Jordánsko'},
+  {id:'j3',date:'22.6.',g:'J',h:'🇦🇷',a:'🇦🇹',hn:'Argentina',an:'Rakousko'},
+  {id:'j4',date:'23.6.',g:'J',h:'🇯🇴',a:'🇩🇿',hn:'Jordánsko',an:'Alžírsko'},
+  {id:'j5',date:'27.6.',g:'J',h:'🇦🇷',a:'🇯🇴',hn:'Argentina',an:'Jordánsko'},
+  {id:'j6',date:'27.6.',g:'J',h:'🇩🇿',a:'🇦🇹',hn:'Alžírsko',an:'Rakousko'},
+  // SKUPINA K: Portugalsko, DR Kongo, Uzbekistán, Kolumbie
+  {id:'k1',date:'17.6.',g:'K',h:'🇵🇹',a:'🇨🇩',hn:'Portugalsko',an:'DR Kongo'},
+  {id:'k2',date:'18.6.',g:'K',h:'🇺🇿',a:'🇨🇴',hn:'Uzbekistán',an:'Kolumbie'},
+  {id:'k3',date:'23.6.',g:'K',h:'🇵🇹',a:'🇺🇿',hn:'Portugalsko',an:'Uzbekistán'},
+  {id:'k4',date:'24.6.',g:'K',h:'🇨🇴',a:'🇨🇩',hn:'Kolumbie',an:'DR Kongo'},
+  {id:'k5',date:'28.6.',g:'K',h:'🇵🇹',a:'🇨🇴',hn:'Portugalsko',an:'Kolumbie'},
+  {id:'k6',date:'28.6.',g:'K',h:'🇨🇩',a:'🇺🇿',hn:'DR Kongo',an:'Uzbekistán'},
+  // SKUPINA L: Anglie, Chorvatsko, Ghana, Panama
+  {id:'l1',date:'17.6.',g:'L',h:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',a:'🇭🇷',hn:'Anglie',an:'Chorvatsko'},
+  {id:'l2',date:'18.6.',g:'L',h:'🇬🇭',a:'🇵🇦',hn:'Ghana',an:'Panama'},
+  {id:'l3',date:'23.6.',g:'L',h:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',a:'🇬🇭',hn:'Anglie',an:'Ghana'},
+  {id:'l4',date:'24.6.',g:'L',h:'🇵🇦',a:'🇭🇷',hn:'Panama',an:'Chorvatsko'},
+  {id:'l5',date:'28.6.',g:'L',h:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',a:'🇵🇦',hn:'Anglie',an:'Panama'},
+  {id:'l6',date:'28.6.',g:'L',h:'🇭🇷',a:'🇬🇭',hn:'Chorvatsko',an:'Ghana'},
+];;
+const GROUPS = ['A','B','C','D','E','F','G','H','I','J','K','L'];
 const AVATAR_COLORS = ['av0','av1','av2','av3','av4','av5','av6','av7','av8'];
 
 // ─── STATE ───────────────────────────────────────────────────────
