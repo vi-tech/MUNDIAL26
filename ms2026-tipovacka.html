@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MS 2026 — Tipovačka</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #ffffff; --bg2: #f5f5f4; --bg3: #ededec;
+    --text: #1c1c1b; --text2: #6b6b67; --text3: #a0a09a;
+    --border: rgba(0,0,0,0.12); --border2: rgba(0,0,0,0.22);
+    --blue: #185FA5; --blue-light: #E6F1FB; --blue-dark: #0C447C;
+    --green: #0F6E56; --green-light: #E1F5EE;
+    --red: #A32D2D; --red-light: #FCEBEB;
+    --gold: #FAC775; --gold-dark: #412402;
+    --silver: #D3D1C7; --silver-dark: #2C2C2A;
+    --bronze: #F5C4B3; --bronze-dark: #4A1B0C;
+    --radius: 10px; --radius-lg: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1e1c; --bg2: #2a2a27; --bg3: #333330;
+      --text: #f0f0ec; --text2: #9d9d97; --text3: #666661;
+      --border: rgba(255,255,255,0.1); --border2: rgba(255,255,255,0.2);
+      --blue-light: #042C53; --blue: #85B7EB; --blue-dark: #B5D4F4;
+      --green-light: #04342C; --green: #5DCAA5;
+      --red-light: #501313; --red: #F09595;
+    }
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg3); color: var(--text); min-height: 100vh; }
+  .container { max-width: 700px; margin: 0 auto; padding: 1rem; }
+  .header { text-align: center; padding: 2rem 1rem 1.5rem; background: var(--bg); border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; border-radius: var(--radius-lg); }
+  .header h1 { font-size: 26px; font-weight: 600; letter-spacing: -0.5px; }
+  .header p { font-size: 14px; color: var(--text2); margin-top: 6px; }
+  .badge { display: inline-block; background: var(--blue-light); color: var(--blue); font-size: 11px; font-weight: 500; padding: 3px 12px; border-radius: 20px; margin-top: 10px; border: 1px solid var(--border); }
+  .tabs { display: flex; background: var(--bg); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; margin-bottom: 1.5rem; }
+  .tab { flex: 1; padding: 11px 6px; font-size: 13px; text-align: center; cursor: pointer; background: transparent; border: none; color: var(--text2); border-right: 1px solid var(--border); font-family: inherit; transition: background 0.15s, color 0.15s; }
+  .tab:last-child { border-right: none; }
+  .tab.active { background: var(--bg2); color: var(--text); font-weight: 500; }
+  .tab:hover:not(.active) { background: var(--bg2); }
+  .section { display: none; }
+  .section.active { display: block; }
+  .card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; margin-bottom: 1rem; }
+  .card h3 { font-size: 15px; font-weight: 500; margin-bottom: 0.75rem; }
+  .match-row { display: flex; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .match-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .team { flex: 1; font-size: 13px; display: flex; align-items: center; gap: 6px; }
+  .team.right { justify-content: flex-end; flex-direction: row-reverse; }
+  .flag { font-size: 20px; line-height: 1; }
+  .score-inputs { display: flex; align-items: center; gap: 6px; }
+  .score-inp { width: 42px; height: 36px; text-align: center; font-size: 17px; font-weight: 600; border: 1px solid var(--border2); border-radius: 8px; background: var(--bg2); color: var(--text); font-family: inherit; }
+  .score-inp:focus { outline: none; border-color: var(--blue); }
+  .score-inp.result-inp { border-color: var(--blue); }
+  .score-sep { font-size: 18px; color: var(--text2); font-weight: 600; }
+  .match-date { font-size: 11px; color: var(--text3); white-space: nowrap; min-width: 55px; text-align: center; }
+  input[type="text"], input[type="number"] { font-family: inherit; }
+  .name-input { width: 100%; padding: 10px 14px; font-size: 15px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--bg2); color: var(--text); margin-bottom: 12px; font-family: inherit; }
+  .name-input:focus { outline: none; border-color: var(--blue); }
+  .btn { padding: 9px 18px; border-radius: var(--radius); border: 1px solid var(--border2); background: var(--bg); color: var(--text); font-size: 14px; cursor: pointer; font-family: inherit; transition: background 0.15s; }
+  .btn:hover { background: var(--bg2); }
+  .btn.primary { background: var(--blue); color: #fff; border-color: var(--blue); }
+  .btn.primary:hover { background: var(--blue-dark); border-color: var(--blue-dark); }
+  .btn.danger { background: var(--red); color: #fff; border-color: var(--red); font-size: 12px; padding: 5px 12px; }
+  .btn.active-player { background: var(--blue); color: #fff; border-color: var(--blue); }
+  .player-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .player-row:last-child { border-bottom: none; }
+  .player-name { font-size: 14px; font-weight: 500; flex: 1; }
+  .player-meta { font-size: 12px; color: var(--text3); }
+  .empty { text-align: center; padding: 2rem; color: var(--text2); font-size: 14px; }
+  .progress-bar { height: 4px; border-radius: 2px; background: var(--bg3); margin-top: 8px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--blue); border-radius: 2px; transition: width 0.3s; }
+  .group-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
+  .group-tag { font-size: 11px; background: var(--bg2); color: var(--text2); padding: 3px 10px; border-radius: 10px; border: 1px solid var(--border); }
+  table.ranking { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.ranking th { font-size: 12px; color: var(--text2); font-weight: 500; text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  table.ranking td { padding: 8px 8px; border-bottom: 1px solid var(--border); }
+  table.ranking tr:last-child td { border-bottom: none; }
+  .pts { font-weight: 600; color: var(--blue); font-size: 16px; }
+  .green-val { color: var(--green); font-weight: 500; }
+  .rank-badge { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; font-size: 11px; font-weight: 600; }
+  .r1 { background: var(--gold); color: var(--gold-dark); }
+  .r2 { background: var(--silver); color: var(--silver-dark); }
+  .r3 { background: var(--bronze); color: var(--bronze-dark); }
+  .rn { background: var(--bg2); color: var(--text2); }
+  .tip-chip { font-size: 11px; padding: 2px 8px; border-radius: 10px; display: inline-block; margin: 2px; }
+  .how-row { display: flex; align-items: center; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .how-row:last-child { border-bottom: none; }
+  .how-pts { font-size: 20px; font-weight: 700; color: var(--blue); min-width: 30px; }
+  .info-box { background: var(--blue-light); border-radius: var(--radius); padding: 10px 14px; font-size: 13px; color: var(--blue-dark); margin-bottom: 1rem; border: 1px solid rgba(24,95,165,0.2); }
+  .export-area { font-size: 12px; word-break: break-all; background: var(--bg2); border-radius: var(--radius); padding: 10px; color: var(--text2); max-height: 80px; overflow: auto; margin-top: 8px; border: 1px solid var(--border); }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>⚽ Mistrovství světa 2026</h1>
+    <p>Tipovací soutěž — tipuj zápasy, sbírej body, vyhraj!</p>
+    <span class="badge">🇺🇸 USA · 🇨🇦 Kanada · 🇲🇽 Mexiko · 11.6 – 19.7.2026</span>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('register',this)">👤 Hráči</button>
+    <button class="tab" onclick="showTab('tips',this)">✏️ Tipy</button>
+    <button class="tab" onclick="showTab('results',this)">📋 Výsledky</button>
+    <button class="tab" onclick="showTab('table',this)">🏆 Tabulka</button>
+    <button class="tab" onclick="showTab('export',this)">💾 Data</button>
+  </div>
+
+  <!-- REGISTRACE -->
+  <div id="register" class="section active">
+    <div class="card">
+      <h3>Přidat hráče</h3>
+      <input class="name-input" id="newName" placeholder="Tvoje jméno..." maxlength="30" onkeydown="if(event.key==='Enter')addPlayer()" />
+      <button class="btn primary" onclick="addPlayer()">+ Přidat hráče</button>
+    </div>
+    <div class="card">
+      <h3>Registrovaní hráči (<span id="playerCount">0</span>)</h3>
+      <div id="playerList"><div class="empty">Zatím žádní hráči — přidej první!</div></div>
+    </div>
+    <div class="card">
+      <h3>Jak se počítají body</h3>
+      <div class="how-row"><span class="how-pts">3</span><span><strong>Přesný výsledek</strong> — trefíš přesné skóre</span></div>
+      <div class="how-row"><span class="how-pts">1</span><span><strong>Správný vítěz / remíza</strong> — trefíš výsledek, ale ne skóre</span></div>
+      <div class="how-row"><span class="how-pts">0</span><span><strong>Špatný tip</strong> — vítěz se neshoduje</span></div>
+    </div>
+  </div>
+
+  <!-- TIPY -->
+  <div id="tips" class="section">
+    <div id="tipsPlayerBar"></div>
+    <div id="tipsContent"></div>
+  </div>
+
+  <!-- VÝSLEDKY -->
+  <div id="results" class="section">
+    <div class="info-box">📝 Tato záložka je pro pořadatele soutěže — zadej skutečné výsledky zápasů. Body se přepočítají automaticky.</div>
+    <div id="resultsContent"></div>
+  </div>
+
+  <!-- TABULKA -->
+  <div id="table" class="section">
+    <div id="tableContent"></div>
+  </div>
+
+  <!-- EXPORT/IMPORT -->
+  <div id="export" class="section">
+    <div class="card">
+      <h3>Export dat</h3>
+      <p style="font-size:13px; color:var(--text2); margin-bottom:12px;">Zkopíruj tato data a pošli je ostatním nebo si je ulož.</p>
+      <button class="btn primary" onclick="doExport()">📋 Kopírovat data do schránky</button>
+      <div id="exportArea" class="export-area" style="margin-top:8px; display:none;"></div>
+    </div>
+    <div class="card">
+      <h3>Import dat</h3>
+      <p style="font-size:13px; color:var(--text2); margin-bottom:12px;">Vlož data zkopírovaná od jiného hráče nebo z jiného zařízení. <strong>Pozor: přepíše současná data!</strong></p>
+      <textarea id="importArea" style="width:100%; height:80px; font-size:12px; font-family:monospace; border:1px solid var(--border2); border-radius:var(--radius); background:var(--bg2); color:var(--text); padding:8px; resize:vertical;" placeholder="Vlož data zde..."></textarea>
+      <br><br>
+      <button class="btn danger" onclick="doImport()">📥 Importovat data</button>
+    </div>
+    <div class="card">
+      <h3>Sdílení přes Google Drive</h3>
+      <div style="font-size:13px; color:var(--text2); line-height:1.8;">
+        <p><strong style="color:var(--text)">1.</strong> Nahraj tento HTML soubor na Google Drive</p>
+        <p><strong style="color:var(--text)">2.</strong> Pravý klik → Sdílet → Kdokoli s odkazem může zobrazit</p>
+        <p><strong style="color:var(--text)">3.</strong> Zkopíruj odkaz a pošli kamarádům</p>
+        <p style="margin-top:8px; padding:8px; background:var(--bg2); border-radius:var(--radius); font-size:12px;">⚠️ Každý hráč má svá data v prohlížeči. Pro sdílení výsledků použij funkci Export/Import výše.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const MATCHES = [
+  // Skupina A
+  {id:'m1',date:'12.6.',g:'A',h:'🇲🇽',a:'🇵🇱',hn:'Mexiko',an:'Polsko'},
+  {id:'m2',date:'13.6.',g:'A',h:'🇸🇦',a:'🇦🇷',hn:'S. Arábie',an:'Argentina'},
+  {id:'m3',date:'16.6.',g:'A',h:'🇲🇽',a:'🇸🇦',hn:'Mexiko',an:'S. Arábie'},
+  {id:'m4',date:'16.6.',g:'A',h:'🇵🇱',a:'🇦🇷',hn:'Polsko',an:'Argentina'},
+  {id:'m5',date:'20.6.',g:'A',h:'🇵🇱',a:'🇸🇦',hn:'Polsko',an:'S. Arábie'},
+  {id:'m6',date:'20.6.',g:'A',h:'🇦🇷',a:'🇲🇽',hn:'Argentina',an:'Mexiko'},
+  // Skupina B
+  {id:'m7',date:'13.6.',g:'B',h:'🇺🇸',a:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',hn:'USA',an:'Anglie'},
+  {id:'m8',date:'13.6.',g:'B',h:'🇮🇷',a:'🏴󠁧󠁢󠁷󠁬󠁳󠁿',hn:'Írán',an:'Wales'},
+  {id:'m9',date:'17.6.',g:'B',h:'🏴󠁧󠁢󠁷󠁬󠁳󠁿',a:'🇺🇸',hn:'Wales',an:'USA'},
+  {id:'m10',date:'17.6.',g:'B',h:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',a:'🇮🇷',hn:'Anglie',an:'Írán'},
+  {id:'m11',date:'21.6.',g:'B',h:'🏴󠁧󠁢󠁷󠁬󠁳󠁿',a:'🇮🇷',hn:'Wales',an:'Írán'},
+  {id:'m12',date:'21.6.',g:'B',h:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',a:'🇺🇸',hn:'Anglie',an:'USA'},
+  // Skupina C
+  {id:'m13',date:'14.6.',g:'C',h:'🇩🇰',a:'🇹🇳',hn:'Dánsko',an:'Tunisko'},
+  {id:'m14',date:'14.6.',g:'C',h:'🇫🇷',a:'🇦🇺',hn:'Francie',an:'Austrálie'},
+  {id:'m15',date:'18.6.',g:'C',h:'🇹🇳',a:'🇦🇺',hn:'Tunisko',an:'Austrálie'},
+  {id:'m16',date:'18.6.',g:'C',h:'🇫🇷',a:'🇩🇰',hn:'Francie',an:'Dánsko'},
+  {id:'m17',date:'22.6.',g:'C',h:'🇦🇺',a:'🇩🇰',hn:'Austrálie',an:'Dánsko'},
+  {id:'m18',date:'22.6.',g:'C',h:'🇹🇳',a:'🇫🇷',hn:'Tunisko',an:'Francie'},
+  // Skupina D
+  {id:'m19',date:'15.6.',g:'D',h:'🇩🇪',a:'🇯🇵',hn:'Německo',an:'Japonsko'},
+  {id:'m20',date:'15.6.',g:'D',h:'🇨🇷',a:'🇪🇸',hn:'Kostarika',an:'Španělsko'},
+  {id:'m21',date:'19.6.',g:'D',h:'🇯🇵',a:'🇨🇷',hn:'Japonsko',an:'Kostarika'},
+  {id:'m22',date:'19.6.',g:'D',h:'🇪🇸',a:'🇩🇪',hn:'Španělsko',an:'Německo'},
+  {id:'m23',date:'23.6.',g:'D',h:'🇯🇵',a:'🇪🇸',hn:'Japonsko',an:'Španělsko'},
+  {id:'m24',date:'23.6.',g:'D',h:'🇨🇷',a:'🇩🇪',hn:'Kostarika',an:'Německo'},
+  // Skupina E
+  {id:'m25',date:'16.6.',g:'E',h:'🇧🇪',a:'🇨🇦',hn:'Belgie',an:'Kanada'},
+  {id:'m26',date:'16.6.',g:'E',h:'🇭🇷',a:'🇲🇦',hn:'Chorvatsko',an:'Maroko'},
+  {id:'m27',date:'20.6.',g:'E',h:'🇧🇪',a:'🇭🇷',hn:'Belgie',an:'Chorvatsko'},
+  {id:'m28',date:'20.6.',g:'E',h:'🇲🇦',a:'🇨🇦',hn:'Maroko',an:'Kanada'},
+  {id:'m29',date:'24.6.',g:'E',h:'🇭🇷',a:'🇨🇦',hn:'Chorvatsko',an:'Kanada'},
+  {id:'m30',date:'24.6.',g:'E',h:'🇲🇦',a:'🇧🇪',hn:'Maroko',an:'Belgie'},
+  // Skupina F
+  {id:'m31',date:'17.6.',g:'F',h:'🇧🇷',a:'🇷🇸',hn:'Brazílie',an:'Srbsko'},
+  {id:'m32',date:'17.6.',g:'F',h:'🇨🇭',a:'🇨🇲',hn:'Švýcarsko',an:'Kamerun'},
+  {id:'m33',date:'21.6.',g:'F',h:'🇧🇷',a:'🇨🇭',hn:'Brazílie',an:'Švýcarsko'},
+  {id:'m34',date:'21.6.',g:'F',h:'🇨🇲',a:'🇷🇸',hn:'Kamerun',an:'Srbsko'},
+  {id:'m35',date:'25.6.',g:'F',h:'🇧🇷',a:'🇨🇲',hn:'Brazílie',an:'Kamerun'},
+  {id:'m36',date:'25.6.',g:'F',h:'🇷🇸',a:'🇨🇭',hn:'Srbsko',an:'Švýcarsko'},
+  // Skupina G
+  {id:'m37',date:'18.6.',g:'G',h:'🇵🇹',a:'🇬🇭',hn:'Portugalsko',an:'Ghana'},
+  {id:'m38',date:'18.6.',g:'G',h:'🇺🇾',a:'🇰🇷',hn:'Uruguay',an:'Jižní Korea'},
+  {id:'m39',date:'22.6.',g:'G',h:'🇵🇹',a:'🇺🇾',hn:'Portugalsko',an:'Uruguay'},
+  {id:'m40',date:'22.6.',g:'G',h:'🇬🇭',a:'🇰🇷',hn:'Ghana',an:'Jižní Korea'},
+  {id:'m41',date:'26.6.',g:'G',h:'🇬🇭',a:'🇺🇾',hn:'Ghana',an:'Uruguay'},
+  {id:'m42',date:'26.6.',g:'G',h:'🇰🇷',a:'🇵🇹',hn:'Jižní Korea',an:'Portugalsko'},
+  // Skupina H
+  {id:'m43',date:'19.6.',g:'H',h:'🇳🇱',a:'🇸🇳',hn:'Holandsko',an:'Senegal'},
+  {id:'m44',date:'19.6.',g:'H',h:'🇪🇨',a:'🇶🇦',hn:'Ekvádor',an:'Katar'},
+  {id:'m45',date:'23.6.',g:'H',h:'🇳🇱',a:'🇪🇨',hn:'Holandsko',an:'Ekvádor'},
+  {id:'m46',date:'23.6.',g:'H',h:'🇸🇳',a:'🇶🇦',hn:'Senegal',an:'Katar'},
+  {id:'m47',date:'27.6.',g:'H',h:'🇶🇦',a:'🇳🇱',hn:'Katar',an:'Holandsko'},
+  {id:'m48',date:'27.6.',g:'H',h:'🇸🇳',a:'🇪🇨',hn:'Senegal',an:'Ekvádor'},
+];
+
+const GROUPS = [...new Set(MATCHES.map(m => m.g))];
+
+function loadState() {
+  try { return JSON.parse(localStorage.getItem('ms2026_v2') || 'null') || {players:[], tips:{}, results:{}}; }
+  catch(e) { return {players:[], tips:{}, results:{}}; }
+}
+let state = loadState();
+let activePlayer = state.players[0] || null;
+
+function saveState() { localStorage.setItem('ms2026_v2', JSON.stringify(state)); }
+
+// HRÁČI
+function addPlayer() {
+  const v = document.getElementById('newName').value.trim();
+  if (!v) return;
+  if (state.players.includes(v)) { alert('Hráč "' + v + '" už existuje!'); return; }
+  state.players.push(v);
+  if (!state.tips[v]) state.tips[v] = {};
+  saveState();
+  document.getElementById('newName').value = '';
+  if (!activePlayer) activePlayer = v;
+  renderAll();
+}
+
+function removePlayer(name) {
+  if (!confirm('Opravdu odebrat hráče "' + name + '"? Všechny jeho tipy budou smazány.')) return;
+  state.players = state.players.filter(p => p !== name);
+  delete state.tips[name];
+  if (activePlayer === name) activePlayer = state.players[0] || null;
+  saveState();
+  renderAll();
+}
+
+function renderPlayerList() {
+  const el = document.getElementById('playerList');
+  document.getElementById('playerCount').textContent = state.players.length;
+  if (!state.players.length) { el.innerHTML = '<div class="empty">Zatím žádní hráči — přidej první!</div>'; return; }
+  el.innerHTML = state.players.map(p => {
+    const filled = Object.values(state.tips[p]||{}).filter(t=>t.h!==undefined&&t.a!==undefined).length;
+    return `<div class="player-row">
+      <div class="player-name">${p}</div>
+      <div class="player-meta">${filled}/${MATCHES.length} tipů</div>
+      <button class="btn danger" onclick="removePlayer('${esc(p)}')">Odebrat</button>
+    </div>`;
+  }).join('');
+}
+
+// TIPY
+function renderTipsPlayerBar() {
+  const el = document.getElementById('tipsPlayerBar');
+  if (!state.players.length) { el.innerHTML = '<div class="card"><div class="empty">Nejprve přidej hráče na záložce Hráči</div></div>'; return; }
+  if (!activePlayer || !state.players.includes(activePlayer)) activePlayer = state.players[0];
+  const t = state.tips[activePlayer] || {};
+  const filled = Object.values(t).filter(x=>x.h!==undefined&&x.a!==undefined).length;
+  el.innerHTML = `<div class="card" style="padding:0.75rem 1rem; margin-bottom:1rem;">
+    <div style="font-size:12px; color:var(--text2); margin-bottom:8px;">Zadávám tipy za hráče:</div>
+    <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px;">
+      ${state.players.map(p=>`<button class="btn ${p===activePlayer?'active-player':''}" style="font-size:13px; padding:6px 14px;" onclick="setActivePlayer('${esc(p)}')">${p}</button>`).join('')}
+    </div>
+    <div style="font-size:12px; color:var(--text2);">${filled} / ${MATCHES.length} tipů zadáno</div>
+    <div class="progress-bar"><div class="progress-fill" id="tipProgress" style="width:${Math.round(filled/MATCHES.length*100)}%"></div></div>
+  </div>`;
+}
+
+function setActivePlayer(name) { activePlayer = name; renderTips(); }
+
+function renderTipsContent() {
+  const el = document.getElementById('tipsContent');
+  if (!activePlayer) { el.innerHTML = ''; return; }
+  const t = state.tips[activePlayer] || {};
+  el.innerHTML = GROUPS.map(g => {
+    const gMatches = MATCHES.filter(m=>m.g===g);
+    return `<div class="card">
+      <div class="group-header"><h3>Skupina ${g}</h3><span class="group-tag">${gMatches.length} zápasů</span></div>
+      ${gMatches.map(m => {
+        const tip = t[m.id] || {};
+        return `<div class="match-row">
+          <div class="team"><span class="flag">${m.h}</span><span>${m.hn}</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+            <div class="score-inputs">
+              <input class="score-inp" type="number" min="0" max="30" value="${tip.h!==undefined?tip.h:''}" placeholder="-" id="tip_${m.id}_h" onchange="saveTip('${m.id}','h',this.value)" />
+              <span class="score-sep">:</span>
+              <input class="score-inp" type="number" min="0" max="30" value="${tip.a!==undefined?tip.a:''}" placeholder="-" id="tip_${m.id}_a" onchange="saveTip('${m.id}','a',this.value)" />
+            </div>
+            <div class="match-date">${m.date}</div>
+          </div>
+          <div class="team right"><span class="flag">${m.a}</span><span>${m.an}</span></div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+}
+
+function renderTips() { renderTipsPlayerBar(); renderTipsContent(); }
+
+function saveTip(matchId, side, val) {
+  if (!activePlayer) return;
+  if (!state.tips[activePlayer]) state.tips[activePlayer] = {};
+  if (!state.tips[activePlayer][matchId]) state.tips[activePlayer][matchId] = {};
+  state.tips[activePlayer][matchId][side] = val === '' ? undefined : parseInt(val);
+  saveState();
+  updateProgressBar();
+}
+
+function updateProgressBar() {
+  const t = state.tips[activePlayer] || {};
+  const filled = Object.values(t).filter(x=>x.h!==undefined&&x.a!==undefined).length;
+  const bar = document.getElementById('tipProgress');
+  if (bar) bar.style.width = Math.round(filled/MATCHES.length*100)+'%';
+}
+
+// VÝSLEDKY
+function renderResults() {
+  const el = document.getElementById('resultsContent');
+  el.innerHTML = GROUPS.map(g => {
+    const gMatches = MATCHES.filter(m=>m.g===g);
+    return `<div class="card">
+      <div class="group-header"><h3>Skupina ${g}</h3><span class="group-tag">${gMatches.length} zápasů</span></div>
+      ${gMatches.map(m => {
+        const r = state.results[m.id] || {};
+        return `<div class="match-row">
+          <div class="team"><span class="flag">${m.h}</span><span>${m.hn}</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+            <div class="score-inputs">
+              <input class="score-inp result-inp" type="number" min="0" max="30" value="${r.h!==undefined?r.h:''}" placeholder="-" onchange="saveResult('${m.id}','h',this.value)" />
+              <span class="score-sep">:</span>
+              <input class="score-inp result-inp" type="number" min="0" max="30" value="${r.a!==undefined?r.a:''}" placeholder="-" onchange="saveResult('${m.id}','a',this.value)" />
+            </div>
+            <div class="match-date">${m.date}</div>
+          </div>
+          <div class="team right"><span class="flag">${m.a}</span><span>${m.an}</span></div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+}
+
+function saveResult(matchId, side, val) {
+  if (!state.results[matchId]) state.results[matchId] = {};
+  state.results[matchId][side] = val === '' ? undefined : parseInt(val);
+  saveState();
+}
+
+// BODY
+function calcPts(tip, result) {
+  if (tip.h===undefined||tip.a===undefined||result.h===undefined||result.a===undefined) return null;
+  if (tip.h===result.h && tip.a===result.a) return 3;
+  if (Math.sign(tip.h-tip.a) === Math.sign(result.h-result.a)) return 1;
+  return 0;
+}
+
+// TABULKA
+function renderTable() {
+  const el = document.getElementById('tableContent');
+  if (!state.players.length) { el.innerHTML = '<div class="card"><div class="empty">Zatím žádní hráči</div></div>'; return; }
+
+  const rows = state.players.map(p => {
+    let pts=0, exact=0, correct=0, wrong=0, pending=0;
+    MATCHES.forEach(m => {
+      const tip = (state.tips[p]||{})[m.id]||{};
+      const res = state.results[m.id]||{};
+      const pt = calcPts(tip, res);
+      if (pt===3){pts+=3;exact++;}
+      else if(pt===1){pts+=1;correct++;}
+      else if(pt===0){wrong++;}
+      else if(tip.h!==undefined&&tip.a!==undefined){pending++;}
+    });
+    return {name:p, pts, exact, correct, wrong, pending};
+  }).sort((a,b)=>b.pts-a.pts||b.exact-a.exact);
+
+  const playedCount = Object.values(state.results).filter(r=>r.h!==undefined&&r.a!==undefined).length;
+
+  el.innerHTML = `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
+        <h3>Pořadí hráčů</h3>
+        <span class="group-tag">${playedCount}/${MATCHES.length} zápasů odehráno</span>
+      </div>
+      <table class="ranking">
+        <thead><tr><th></th><th>Jméno</th><th>Body</th><th style="color:var(--green)">Přesně</th><th style="color:var(--blue)">Směr</th><th>Špatně</th></tr></thead>
+        <tbody>${rows.map((r,i)=>{
+          const cls=i===0?'r1':i===1?'r2':i===2?'r3':'rn';
+          return `<tr>
+            <td><span class="rank-badge ${cls}">${i+1}</span></td>
+            <td style="font-weight:500">${r.name}</td>
+            <td class="pts">${r.pts}</td>
+            <td class="green-val">${r.exact}×</td>
+            <td style="color:var(--blue);font-weight:500">${r.correct}×</td>
+            <td style="color:var(--text3)">${r.wrong}×</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>
+    </div>
+    ${playedCount > 0 ? `
+    <div class="card">
+      <h3 style="margin-bottom:0.75rem">Přehled po zápasech</h3>
+      ${MATCHES.filter(m=>(state.results[m.id]||{}).h!==undefined).slice(-10).reverse().map(m=>{
+        const r=state.results[m.id];
+        return `<div style="padding:8px 0;border-bottom:1px solid var(--border);">
+          <div style="font-size:12px;color:var(--text2);margin-bottom:5px;">${m.h} ${m.hn} <strong style="color:var(--text)">${r.h}:${r.a}</strong> ${m.an} ${m.a}</div>
+          <div style="display:flex;flex-wrap:wrap;">${state.players.map(p=>{
+            const tip=(state.tips[p]||{})[m.id]||{};
+            const pt=calcPts(tip,r);
+            const tipStr=tip.h!==undefined&&tip.a!==undefined?`${tip.h}:${tip.a}`:'—';
+            const col=pt===3?'#0F6E56':pt===1?'#185FA5':pt===0?'#A32D2D':'#888780';
+            const bg=pt===3?'#E1F5EE':pt===1?'#E6F1FB':pt===0?'#FCEBEB':'#f5f5f4';
+            return `<span class="tip-chip" style="background:${bg};color:${col};border:1px solid ${col}30">${p}: ${tipStr}${pt!==null?' +'+pt:''}b</span>`;
+          }).join('')}</div>
+        </div>`;
+      }).join('')}
+    </div>` : ''}
+  `;
+}
+
+// EXPORT/IMPORT
+function doExport() {
+  const data = JSON.stringify(state);
+  const area = document.getElementById('exportArea');
+  area.textContent = data;
+  area.style.display = 'block';
+  navigator.clipboard.writeText(data).then(()=>{ alert('Data zkopírována do schránky!'); }).catch(()=>{ alert('Zkopíruj text ručně z políčka níže.'); });
+}
+
+function doImport() {
+  const raw = document.getElementById('importArea').value.trim();
+  if (!raw) { alert('Nejsou zadána žádná data.'); return; }
+  try {
+    const imported = JSON.parse(raw);
+    if (!imported.players || !imported.tips) throw new Error();
+    if (!confirm('Importovat data? Toto přepíše všechna současná data!')) return;
+    state = imported;
+    if (!state.results) state.results = {};
+    saveState();
+    activePlayer = state.players[0] || null;
+    renderAll();
+    alert('Data úspěšně importována!');
+  } catch(e) { alert('Chyba: neplatný formát dat.'); }
+}
+
+// HELPERS
+function esc(s) { return s.replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
+function renderAll() { renderPlayerList(); renderTips(); renderResults(); renderTable(); }
+
+function showTab(tab, btn) {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(tab).classList.add('active');
+  if(btn) btn.classList.add('active');
+  if(tab==='tips') renderTips();
+  if(tab==='results') renderResults();
+  if(tab==='table') renderTable();
+}
+
+renderAll();
+</script>
+</body>
+</html>
