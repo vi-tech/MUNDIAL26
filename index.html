@@ -170,11 +170,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     <p>Zadej přihlašovací údaje k tvému Supabase projektu. Najdeš je v Supabase dashboardu pod <strong>Settings → API</strong>.</p>
     <div class="field">
       <label>Supabase URL</label>
-      <input class="input" id="cfgUrl" placeholder="" />
+      <input class="input" id="cfgUrl" placeholder="https://xxxxx.supabase.co" />
     </div>
     <div class="field">
       <label>Anon Key (public)</label>
-      <input class="input" id="cfgKey" placeholder="" />
+      <input class="input" id="cfgKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." />
     </div>
     <button class="btn primary" style="width:100%; justify-content:center;" onclick="saveConfig()">Uložit a připojit</button>
   </div>
@@ -227,7 +227,40 @@ CREATE POLICY "public update tips" ON tips FOR UPDATE USING (true);
 
 CREATE POLICY "public read results" ON results FOR SELECT USING (true);
 CREATE POLICY "public upsert results" ON results FOR INSERT WITH CHECK (true);
-CREATE POLICY "public update results" ON results FOR UPDATE USING (true);</div>
+CREATE POLICY "public update results" ON results FOR UPDATE USING (true);
+
+-- Tipy na vyřazovací část
+CREATE TABLE knockout_tips (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  player_name text NOT NULL REFERENCES players(name) ON DELETE CASCADE,
+  match_id text NOT NULL,
+  winner text,
+  home_score integer,
+  away_score integer,
+  updated_at timestamptz DEFAULT now(),
+  UNIQUE(player_name, match_id)
+);
+
+CREATE POLICY "public read knockout_tips" ON knockout_tips FOR SELECT USING (true);
+CREATE POLICY "public upsert knockout_tips" ON knockout_tips FOR INSERT WITH CHECK (true);
+CREATE POLICY "public update knockout_tips" ON knockout_tips FOR UPDATE USING (true);
+
+-- Výsledky vyřazovací části
+CREATE TABLE knockout_results (
+  match_id text PRIMARY KEY,
+  home_team text,
+  away_team text,
+  home_score integer,
+  away_score integer,
+  home_pens integer,
+  away_pens integer,
+  winner text,
+  updated_at timestamptz DEFAULT now()
+);
+
+CREATE POLICY "public read knockout_results" ON knockout_results FOR SELECT USING (true);
+CREATE POLICY "public upsert knockout_results" ON knockout_results FOR INSERT WITH CHECK (true);
+CREATE POLICY "public update knockout_results" ON knockout_results FOR UPDATE USING (true);</div>
     <button class="btn sm" onclick="copySQL()">📋 Kopírovat SQL</button>
   </div>
 </div>
@@ -250,6 +283,7 @@ CREATE POLICY "public update results" ON results FOR UPDATE USING (true);</div>
       <button class="tab active" onclick="showTab('players',this)">👤 Hráči</button>
       <button class="tab" onclick="showTab('tips',this)">✏️ Tipy</button>
       <button class="tab" onclick="showTab('results',this)">📋 Výsledky</button>
+      <button class="tab" onclick="showTab('knockout',this)">⚔️ Vyřazovací</button>
       <button class="tab" onclick="showTab('ranking',this)">🏆 Tabulka</button>
     </div>
 
@@ -290,6 +324,11 @@ CREATE POLICY "public update results" ON results FOR UPDATE USING (true);</div>
         <div id="resultsContent"></div>
       </div>
 
+      <!-- VYŘAZOVACÍ ČÁST -->
+      <div id="knockout" class="section">
+        <div id="knockoutContent"></div>
+      </div>
+
       <!-- TABULKA -->
       <div id="ranking" class="section">
         <div id="rankingContent"></div>
@@ -302,8 +341,8 @@ CREATE POLICY "public update results" ON results FOR UPDATE USING (true);</div>
 <script>
 // ─── KONFIGURACE ────────────────────────────────────────────────
 // Buď nastav přímo zde, nebo přes setup screen
-const SUPABASE_URL = 'https://zydzvzdnirofiphuhfyx.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp5ZHp2emRuaXJvZmlwaHVoZnl4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1NTM0OTEsImV4cCI6MjA5NjEyOTQ5MX0.LCLGZ8ThAH0VM73Mv6u50-86XAKDNn2GT-L5mbli3Mw';
+const SUPABASE_URL = '';
+const SUPABASE_ANON_KEY = '';
 
 // ─── ZÁPASY ─────────────────────────────────────────────────────
 // Všech 72 zápasů skupinové fáze MS 2026 - správné losování
@@ -394,13 +433,63 @@ const MATCHES = [
   {id:'l6',date:'28.6.',g:'L',h:'🇭🇷',a:'🇬🇭',hn:'Chorvatsko',an:'Ghana'},
 ];;
 const GROUPS = ['A','B','C','D','E','F','G','H','I','J','K','L'];
+
+// Vyřazovací kolo - sloty (týmy se doplní automaticky)
+// MS 2026: 12 skupin, postupují 1. a 2. místo + 8 nejlepších třetích = 32 týmů
+// Šestnáctifinále: 32 zápasů
+const KNOCKOUT_ROUNDS = [
+  { id: 'r16', name: 'Šestnáctifinále', matches: [
+    {id:'r16_1', date:'28.6.', slot1:'1A', slot2:'2C'},
+    {id:'r16_2', date:'28.6.', slot1:'1B', slot2:'2D'},
+    {id:'r16_3', date:'29.6.', slot1:'1C', slot2:'2A'},
+    {id:'r16_4', date:'29.6.', slot1:'1D', slot2:'2B'},
+    {id:'r16_5', date:'30.6.', slot1:'1E', slot2:'2G'},
+    {id:'r16_6', date:'30.6.', slot1:'1F', slot2:'2H'},
+    {id:'r16_7', date:'1.7.',  slot1:'1G', slot2:'2E'},
+    {id:'r16_8', date:'1.7.',  slot1:'1H', slot2:'2F'},
+    {id:'r16_9', date:'2.7.',  slot1:'1I', slot2:'2K'},
+    {id:'r16_10',date:'2.7.',  slot1:'1J', slot2:'2L'},
+    {id:'r16_11',date:'3.7.',  slot1:'1K', slot2:'2I'},
+    {id:'r16_12',date:'3.7.',  slot1:'1L', slot2:'2J'},
+    {id:'r16_13',date:'28.6.', slot1:'3A/B/C/D', slot2:'3E/F/G/H'},
+    {id:'r16_14',date:'29.6.', slot1:'3A/B/C/D', slot2:'3I/J/K/L'},
+    {id:'r16_15',date:'30.6.', slot1:'3E/F/G/H', slot2:'3I/J/K/L'},
+    {id:'r16_16',date:'1.7.',  slot1:'3A/B', slot2:'3C/D'},
+  ]},
+  { id: 'qf', name: 'Osmifinále', matches: [
+    {id:'qf_1', date:'4.7.',  slot1:'W r16_1', slot2:'W r16_2'},
+    {id:'qf_2', date:'4.7.',  slot1:'W r16_3', slot2:'W r16_4'},
+    {id:'qf_3', date:'5.7.',  slot1:'W r16_5', slot2:'W r16_6'},
+    {id:'qf_4', date:'5.7.',  slot1:'W r16_7', slot2:'W r16_8'},
+    {id:'qf_5', date:'6.7.',  slot1:'W r16_9', slot2:'W r16_10'},
+    {id:'qf_6', date:'6.7.',  slot1:'W r16_11', slot2:'W r16_12'},
+    {id:'qf_7', date:'7.7.',  slot1:'W r16_13', slot2:'W r16_14'},
+    {id:'qf_8', date:'7.7.',  slot1:'W r16_15', slot2:'W r16_16'},
+  ]},
+  { id: 'sf', name: 'Čtvrtfinále', matches: [
+    {id:'sf_1', date:'9.7.',  slot1:'W qf_1', slot2:'W qf_2'},
+    {id:'sf_2', date:'9.7.',  slot1:'W qf_3', slot2:'W qf_4'},
+    {id:'sf_3', date:'10.7.', slot1:'W qf_5', slot2:'W qf_6'},
+    {id:'sf_4', date:'10.7.', slot1:'W qf_7', slot2:'W qf_8'},
+  ]},
+  { id: 'sf2', name: 'Semifinále', matches: [
+    {id:'sf2_1', date:'14.7.', slot1:'W sf_1', slot2:'W sf_2'},
+    {id:'sf2_2', date:'15.7.', slot1:'W sf_3', slot2:'W sf_4'},
+  ]},
+  { id: 'final', name: 'Finále & O 3. místo', matches: [
+    {id:'3rd',   date:'18.7.', slot1:'L sf2_1', slot2:'L sf2_2'},
+    {id:'final', date:'19.7.', slot1:'W sf2_1', slot2:'W sf2_2'},
+  ]},
+];
 const AVATAR_COLORS = ['av0','av1','av2','av3','av4','av5','av6','av7','av8'];
 
 // ─── STATE ───────────────────────────────────────────────────────
 let sbClient = null;
 let players = [];
-let tips = {};     // { playerName: { matchId: {h, a} } }
-let results = {};  // { matchId: {h, a} }
+let tips = {};           // { playerName: { matchId: {h, a} } }
+let results = {};        // { matchId: {h, a} }
+let knockoutResults = {}; // { matchId: {home_team, away_team, home_score, away_score, home_pens, away_pens, winner} }
+let knockoutTips = {};   // { playerName: { matchId: {winner, home_score, away_score} } }
 let activePlayer = null;
 let saveTimers = {};
 
@@ -668,7 +757,7 @@ function renderResults() {
         </div>`;
       }).join('')}
     </div>`;
-  }).join('');
+  }).join('') + renderKnockoutResults();
 }
 
 function queueResult(matchId, side, val, inputEl) {
@@ -704,13 +793,23 @@ function renderRanking() {
   if (!players.length) { el.innerHTML = '<div class="card"><div class="empty"><div class="empty-icon">🏆</div>Zatím žádní hráči</div></div>'; return; }
 
   const playedMatches = MATCHES.filter(m => results[m.id]?.h != null);
+  // KO zápasy s výsledky
+  const playedKO = KNOCKOUT_ROUNDS.flatMap(r => r.matches).filter(m => knockoutResults[m.id]?.winner);
+
   const rows = players.map((p, i) => {
     let pts=0, exact=0, dir=0, miss=0;
     playedMatches.forEach(m => {
       const tip = (tips[p]||{})[m.id]||{};
       const pt = calcPts(tip, results[m.id]);
       if (pt===3){pts+=3;exact++;}
-      else if(pt===1){pts+=1;dir++;}
+      else if(pt===2){pts+=2;dir++;}
+      else if(pt===0){miss++;}
+    });
+    playedKO.forEach(m => {
+      const tip = (knockoutTips[p]||{})[m.id]||{};
+      const pt = calcKOPts(tip, knockoutResults[m.id]);
+      if (pt===3){pts+=3;exact++;}
+      else if(pt===2){pts+=2;dir++;}
       else if(pt===0){miss++;}
     });
     return {name:p, pts, exact, dir, miss, idx:i};
@@ -764,9 +863,263 @@ function renderRanking() {
   `;
 }
 
+// ─── VYŘAZOVACÍ ČÁST ─────────────────────────────────────────────
+
+// Vypočítá tabulku skupiny a vrátí seřazené týmy
+function getGroupStandings(group) {
+  const gMatches = MATCHES.filter(m => m.g === group);
+  const teams = {};
+  gMatches.forEach(m => {
+    [m.hn, m.an].forEach(t => {
+      if (!teams[t]) teams[t] = { name: t, flag: m.h === '🇨🇿' && t === m.hn ? m.h : (t === m.hn ? m.h : m.a), pts: 0, gf: 0, ga: 0, gd: 0, played: 0 };
+    });
+    const r = results[m.id];
+    if (r && r.h != null && r.a != null) {
+      teams[m.hn].played++;
+      teams[m.an].played++;
+      teams[m.hn].gf += r.h; teams[m.hn].ga += r.a; teams[m.hn].gd += r.h - r.a;
+      teams[m.an].gf += r.a; teams[m.an].ga += r.h; teams[m.an].gd += r.a - r.h;
+      if (r.h > r.a) { teams[m.hn].pts += 3; }
+      else if (r.h < r.a) { teams[m.an].pts += 3; }
+      else { teams[m.hn].pts += 1; teams[m.an].pts += 1; }
+    }
+  });
+  return Object.values(teams).sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf);
+}
+
+// Získá tým podle slotu (např. "1A" = vítěz skupiny A)
+function getTeamBySlot(slot) {
+  if (!slot) return null;
+  // Přímý postup z výsledku: "W r16_1" = vítěz zápasu r16_1
+  if (slot.startsWith('W ') || slot.startsWith('L ')) {
+    const matchId = slot.slice(2);
+    const kr = knockoutResults[matchId];
+    if (!kr || !kr.winner) return null;
+    const isWinner = slot.startsWith('W ');
+    const winnerName = kr.winner;
+    // find the loser
+    if (isWinner) return { name: winnerName, flag: getFlagForTeam(winnerName) };
+    else {
+      const loser = kr.home_team === winnerName ? kr.away_team : kr.home_team;
+      return { name: loser, flag: getFlagForTeam(loser) };
+    }
+  }
+  // Skupinový slot: "1A", "2B", "3C/D/E/F"
+  const pos = parseInt(slot[0]);
+  const groups = slot.slice(1).split('/');
+  if (groups.length === 1) {
+    const standings = getGroupStandings(groups[0]);
+    const team = standings[pos - 1];
+    if (!team) return null;
+    return team;
+  }
+  // Třetí místa - vrátí placeholder
+  return { name: '3. místo ' + slot.slice(1), flag: '🏳️', placeholder: true };
+}
+
+// Mapa vlajek pro týmy v KO části
+const TEAM_FLAGS = {};
+MATCHES.forEach(m => { TEAM_FLAGS[m.hn] = m.h; TEAM_FLAGS[m.an] = m.a; });
+function getFlagForTeam(name) { return TEAM_FLAGS[name] || '🏳️'; }
+
+// Bodování KO: 3 = přesný výsledek, 2 = správný vítěz, 0 = špatně
+function calcKOPts(tip, result) {
+  if (!tip || !result || !result.winner) return null;
+  if (tip.winner !== result.winner) return 0;
+  if (tip.h != null && tip.a != null && tip.h == result.home_score && tip.a == result.away_score) return 3;
+  return 2;
+}
+
+function renderKnockout() {
+  const el = document.getElementById('knockoutContent');
+  if (!el) return;
+
+  const groupsDone = GROUPS.every(g => {
+    const gm = MATCHES.filter(m => m.g === g);
+    return gm.every(m => results[m.id]?.h != null);
+  });
+
+  if (!groupsDone) {
+    // Zjistíme kolik skupin je hotových
+    const doneGroups = GROUPS.filter(g => MATCHES.filter(m => m.g === g).every(m => results[m.id]?.h != null)).length;
+    el.innerHTML = `
+      <div class="card">
+        <div class="card-title">Vyřazovací část</div>
+        <div class="empty">
+          <div class="empty-icon">⏳</div>
+          <p>Vyřazovací část se odemkne po zadání všech skupinových výsledků.</p>
+          <p style="margin-top:8px; color:var(--text3); font-size:12px;">${doneGroups} / ${GROUPS.length} skupin dokončeno</p>
+          <div class="progress-bar" style="margin-top:12px;"><div class="progress-fill" style="width:${Math.round(doneGroups/GROUPS.length*100)}%"></div></div>
+        </div>
+      </div>`;
+    return;
+  }
+
+  // Render each round
+  let html = '';
+  for (const round of KNOCKOUT_ROUNDS) {
+    html += `<div class="card">
+      <div class="card-title">${round.name}</div>`;
+    for (const m of round.matches) {
+      const teamH = getTeamBySlot(m.slot1);
+      const teamA = getTeamBySlot(m.slot2);
+      const kr = knockoutResults[m.id] || {};
+      const myTip = activePlayer ? (knockoutTips[activePlayer] || {})[m.id] || {} : {};
+      const pt = calcKOPts(myTip, kr);
+      const chipHtml = pt === 3 ? '<span class="chip chip-exact">+3</span>' : pt === 2 ? '<span class="chip chip-dir">+2</span>' : pt === 0 ? '<span class="chip chip-miss">0</span>' : '';
+
+      const hName = teamH ? teamH.name : (m.slot1);
+      const aName = teamA ? teamA.name : (m.slot2);
+      const hFlag = teamH ? teamH.flag : '⏳';
+      const aFlag = teamA ? teamA.flag : '⏳';
+      const teamsKnown = teamH && teamA && !teamH.placeholder && !teamA.placeholder;
+
+      html += `<div class="match-row">
+        <div class="team"><span class="flag">${hFlag}</span><span class="team-name" style="font-size:12px;">${hName}</span></div>
+        <div class="score-wrap">
+          <div style="font-size:10px; color:var(--text3); margin-bottom:4px;">${m.date} ${chipHtml}</div>
+          ${kr.winner ? `<div style="font-weight:700; font-size:15px; padding:4px 10px; background:var(--bg2); border-radius:6px;">${kr.home_score ?? '?'}:${kr.away_score ?? '?'}${kr.home_pens != null ? ' ('+kr.home_pens+':'+kr.away_pens+' pen.)':''}</div>
+          <div style="font-size:11px; color:var(--green); margin-top:2px;">✓ ${kr.winner}</div>` 
+          : teamsKnown ? `<div style="font-size:12px; color:var(--text3); padding:4px 8px;">vs</div>` 
+          : `<div style="font-size:11px; color:var(--text3); padding:4px 8px;">⏳</div>`}
+        </div>
+        <div class="team right"><span class="flag">${aFlag}</span><span class="team-name" style="font-size:12px;">${aName}</span></div>
+      </div>
+      ${teamsKnown && !kr.winner && activePlayer ? renderKOTipRow(m.id, hName, aName, hFlag, aFlag, myTip) : ''}`;
+    }
+    html += `</div>`;
+  }
+
+  // Show player selector
+  html = renderKOPlayerBar() + html;
+  el.innerHTML = html;
+}
+
+function renderKOPlayerBar() {
+  if (!players.length) return '<div class="card"><div class="empty">Nejprve přidej hráče</div></div>';
+  if (!activePlayer || !players.includes(activePlayer)) activePlayer = players[0];
+  return `<div class="card" style="margin-bottom:1rem;">
+    <div style="font-size:12px;color:var(--text2);margin-bottom:8px;font-weight:500;">TIPY ZA HRÁČE:</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;">
+      ${players.map((p,i)=>{
+        const initials = p.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+        return `<button class="btn sm ${p===activePlayer?'active':''}" onclick="setKOPlayer('${esc(p)}')" style="gap:6px;">
+          <span style="width:20px;height:20px;border-radius:50%;background:var(--${p===activePlayer?'blue-dark':'bg3'});color:${p===activePlayer?'#fff':'var(--text2)'};font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;">${initials}</span>
+          ${p}
+        </button>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
+function setKOPlayer(name) { activePlayer = name; renderKnockout(); }
+
+function renderKOTipRow(matchId, hName, aName, hFlag, aFlag, tip) {
+  return `<div style="background:var(--bg2);border-radius:var(--r);padding:8px 12px;margin-top:4px;margin-bottom:4px;">
+    <div style="font-size:11px;color:var(--text2);margin-bottom:6px;">Tvůj tip — kdo postoupí?</div>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+      <button class="btn sm ${tip.winner===hName?'primary':''}" onclick="saveKOWinner('${matchId}','${esc(hName)}')">${hFlag} ${hName}</button>
+      <span style="color:var(--text3);font-size:12px;">nebo</span>
+      <button class="btn sm ${tip.winner===aName?'primary':''}" onclick="saveKOWinner('${matchId}','${esc(aName)}')">${aFlag} ${aName}</button>
+      ${tip.winner ? `<span style="font-size:12px;color:var(--green);margin-left:4px;">✓ ${tip.winner}</span>` : ''}
+    </div>
+  </div>`;
+}
+
+async function saveKOWinner(matchId, winner) {
+  if (!activePlayer) return;
+  if (!knockoutTips[activePlayer]) knockoutTips[activePlayer] = {};
+  knockoutTips[activePlayer][matchId] = { ...(knockoutTips[activePlayer][matchId]||{}), winner };
+  await sbClient.from('knockout_tips').upsert({
+    player_name: activePlayer, match_id: matchId, winner,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'player_name,match_id' });
+  renderKnockout();
+}
+
+// Vyřazovací výsledky - render pro záložku Výsledky
+function renderKnockoutResults() {
+  const groupsDone = GROUPS.every(g => MATCHES.filter(m => m.g === g).every(m => results[m.id]?.h != null));
+  if (!groupsDone) return '';
+
+  let html = '<div style="margin-top:1.5rem;"><div style="font-size:16px;font-weight:700;margin-bottom:1rem;">Vyřazovací část</div>';
+  for (const round of KNOCKOUT_ROUNDS) {
+    html += `<div class="card"><div class="card-title">${round.name}</div>`;
+    for (const m of round.matches) {
+      const teamH = getTeamBySlot(m.slot1);
+      const teamA = getTeamBySlot(m.slot2);
+      if (!teamH || !teamA || teamH.placeholder || teamA.placeholder) {
+        html += `<div class="match-row"><div style="font-size:13px;color:var(--text3);padding:4px 0;">${m.date} — čeká se na postup (${m.slot1} vs ${m.slot2})</div></div>`;
+        continue;
+      }
+      const kr = knockoutResults[m.id] || {};
+      html += `<div class="match-row">
+        <div class="team"><span class="flag">${teamH.flag}</span><span class="team-name">${teamH.name}</span></div>
+        <div class="score-wrap">
+          <div class="score-inputs">
+            <input class="score-inp result" type="number" min="0" max="30" value="${kr.home_score!=null?kr.home_score:''}" placeholder="–" onchange="queueKOResult('${m.id}','home_score',this.value,'${esc(teamH.name)}','${esc(teamA.name)}',this)" />
+            <span class="score-sep">:</span>
+            <input class="score-inp result" type="number" min="0" max="30" value="${kr.away_score!=null?kr.away_score:''}" placeholder="–" onchange="queueKOResult('${m.id}','away_score',this.value,'${esc(teamH.name)}','${esc(teamA.name)}',this)" />
+          </div>
+          <div class="match-date">${m.date}</div>
+          ${kr.home_score != null && kr.away_score != null ? `
+          <div style="margin-top:4px;font-size:11px;">
+            pen: <input style="width:28px;height:22px;text-align:center;font-size:12px;border:1px solid var(--border2);border-radius:4px;background:var(--bg2);color:var(--text);" type="number" min="0" max="20" value="${kr.home_pens!=null?kr.home_pens:''}" placeholder="-" onchange="queueKOResult('${m.id}','home_pens',this.value,'${esc(teamH.name)}','${esc(teamA.name)}',this)" />
+            :
+            <input style="width:28px;height:22px;text-align:center;font-size:12px;border:1px solid var(--border2);border-radius:4px;background:var(--bg2);color:var(--text);" type="number" min="0" max="20" value="${kr.away_pens!=null?kr.away_pens:''}" placeholder="-" onchange="queueKOResult('${m.id}','away_pens',this.value,'${esc(teamH.name)}','${esc(teamA.name)}',this)" />
+          </div>
+          <div style="margin-top:4px;font-size:11px;color:var(--text2);">Vítěz: 
+            <button class="btn sm ${kr.winner===teamH.name?'primary':''}" style="padding:2px 8px;font-size:11px;" onclick="setKOWinner('${m.id}','${esc(teamH.name)}','${esc(teamA.name)}')">${teamH.name}</button>
+            <button class="btn sm ${kr.winner===teamA.name?'primary':''}" style="padding:2px 8px;font-size:11px;" onclick="setKOWinner('${m.id}','${esc(teamA.name)}','${esc(teamH.name)}')">${teamA.name}</button>
+          </div>` : ''}
+        </div>
+        <div class="team right"><span class="flag">${teamA.flag}</span><span class="team-name">${teamA.name}</span></div>
+      </div>`;
+    }
+    html += '</div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function queueKOResult(matchId, field, val, hName, aName, inputEl) {
+  if (!knockoutResults[matchId]) knockoutResults[matchId] = { home_team: hName, away_team: aName };
+  knockoutResults[matchId][field] = val === '' ? null : parseInt(val);
+  knockoutResults[matchId].home_team = hName;
+  knockoutResults[matchId].away_team = aName;
+  if (inputEl) { inputEl.classList.add('saved'); setTimeout(() => inputEl.classList.remove('saved'), 1500); }
+  clearTimeout(saveTimers['ko_' + matchId]);
+  saveTimers['ko_' + matchId] = setTimeout(() => flushKOResult(matchId), 800);
+  renderKnockout();
+}
+
+async function setKOWinner(matchId, winner, loser) {
+  if (!knockoutResults[matchId]) knockoutResults[matchId] = {};
+  knockoutResults[matchId].winner = winner;
+  await flushKOResult(matchId);
+  renderResults();
+  renderKnockout();
+  renderRanking();
+}
+
+async function flushKOResult(matchId) {
+  const r = knockoutResults[matchId] || {};
+  await sbClient.from('knockout_results').upsert({
+    match_id: matchId,
+    home_team: r.home_team || null,
+    away_team: r.away_team || null,
+    home_score: r.home_score != null ? r.home_score : null,
+    away_score: r.away_score != null ? r.away_score : null,
+    home_pens: r.home_pens != null ? r.home_pens : null,
+    away_pens: r.away_pens != null ? r.away_pens : null,
+    winner: r.winner || null,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'match_id' });
+}
+
 // ─── HELPERS ─────────────────────────────────────────────────────
 function esc(s) { return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
-function renderAll() { renderPlayerList(); renderTips(); renderResults(); renderRanking(); }
+function renderAll() { renderPlayerList(); renderTips(); renderResults(); renderKnockout(); renderRanking(); }
 
 function showTab(tab, btn) {
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
@@ -775,6 +1128,7 @@ function showTab(tab, btn) {
   if (btn) btn.classList.add('active');
   if (tab==='tips') renderTips();
   if (tab==='results') renderResults();
+  if (tab==='knockout') renderKnockout();
   if (tab==='ranking') renderRanking();
 }
 
