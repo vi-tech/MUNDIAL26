@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MS 2026 — Tipovačka</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #ffffff; --bg2: #f6f5f3; --bg3: #eeedea;
+  --text: #1a1a18; --text2: #6b6b65; --text3: #a8a89f;
+  --border: rgba(0,0,0,0.10); --border2: rgba(0,0,0,0.20);
+  --blue: #185FA5; --blue-bg: #E6F1FB; --blue-dark: #0C447C;
+  --green: #0F6E56; --green-bg: #E1F5EEe;
+  --red: #A32D2D; --red-bg: #FCEBEB;
+  --amber: #BA7517; --amber-bg: #FAEEDA;
+  --gold: #FAC775; --gold-text: #412402;
+  --silver: #B4B2A9; --silver-text: #2C2C2A;
+  --bronze: #F0997B; --bronze-text: #4A1B0C;
+  --r: 10px; --r-lg: 14px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1c1c1a; --bg2: #272724; --bg3: #323230;
+    --text: #f0f0ea; --text2: #9a9a93; --text3: #5e5e58;
+    --border: rgba(255,255,255,0.09); --border2: rgba(255,255,255,0.18);
+    --blue: #85B7EB; --blue-bg: #042C53; --blue-dark: #B5D4F4;
+    --green: #5DCAA5; --green-bg: #04342C;
+    --red: #F09595; --red-bg: #501313;
+    --amber: #EF9F27; --amber-bg: #412402;
+  }
+}
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--bg3); color: var(--text); min-height: 100vh; }
+
+/* LAYOUT */
+.app { max-width: 720px; margin: 0 auto; padding: 0 0 3rem; }
+.header { background: var(--bg); border-bottom: 1px solid var(--border); padding: 2rem 1.5rem 1.5rem; text-align: center; }
+.header h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; }
+.header p { color: var(--text2); font-size: 14px; margin-top: 5px; }
+.pill { display: inline-block; background: var(--blue-bg); color: var(--blue); font-size: 11px; font-weight: 600; padding: 3px 12px; border-radius: 20px; margin-top: 10px; letter-spacing: 0.3px; }
+.content { padding: 1.5rem; }
+.tabs { display: flex; background: var(--bg); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; }
+.tab { flex: 1; padding: 13px 4px; font-size: 13px; text-align: center; cursor: pointer; background: transparent; border: none; color: var(--text2); font-family: inherit; border-bottom: 2px solid transparent; transition: all 0.15s; }
+.tab.active { color: var(--blue); border-bottom-color: var(--blue); font-weight: 500; }
+.tab:hover:not(.active) { color: var(--text); background: var(--bg2); }
+.section { display: none; }
+.section.active { display: block; }
+
+/* CARDS */
+.card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 1.25rem; margin-bottom: 1rem; box-shadow: var(--shadow); }
+.card-title { font-size: 15px; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; }
+.card-title span { font-size: 12px; font-weight: 400; color: var(--text2); }
+
+/* STATUS BAR */
+.status-bar { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: var(--r); font-size: 13px; margin-bottom: 1rem; }
+.status-bar.connecting { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(186,117,23,0.2); }
+.status-bar.ok { background: #E1F5EE; color: var(--green); border: 1px solid rgba(15,110,86,0.2); }
+.status-bar.error { background: var(--red-bg); color: var(--red); border: 1px solid rgba(163,45,45,0.2); }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+.dot.pulse { animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+/* FORMS */
+.field { margin-bottom: 12px; }
+.field label { display: block; font-size: 12px; color: var(--text2); margin-bottom: 5px; font-weight: 500; }
+.input { width: 100%; padding: 10px 14px; font-size: 15px; border: 1px solid var(--border2); border-radius: var(--r); background: var(--bg2); color: var(--text); font-family: inherit; transition: border-color 0.15s; }
+.input:focus { outline: none; border-color: var(--blue); }
+.input.sm { padding: 7px 10px; font-size: 14px; }
+
+/* BUTTONS */
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border-radius: var(--r); border: 1px solid var(--border2); background: var(--bg); color: var(--text); font-size: 14px; cursor: pointer; font-family: inherit; font-weight: 500; transition: all 0.15s; white-space: nowrap; }
+.btn:hover { background: var(--bg2); }
+.btn:active { transform: scale(0.98); }
+.btn.primary { background: var(--blue); color: #fff; border-color: var(--blue); }
+.btn.primary:hover { background: var(--blue-dark); border-color: var(--blue-dark); }
+.btn.danger { background: var(--red); color: #fff; border-color: var(--red); font-size: 12px; padding: 5px 12px; }
+.btn.sm { padding: 6px 12px; font-size: 13px; }
+.btn.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* PLAYER ROWS */
+.player-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.player-row:last-child { border-bottom: none; }
+.avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+.player-info { flex: 1; }
+.player-name { font-size: 14px; font-weight: 500; }
+.player-meta { font-size: 12px; color: var(--text3); margin-top: 1px; }
+
+/* MATCH ROWS */
+.group-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
+.group-label { font-size: 15px; font-weight: 600; }
+.group-badge { font-size: 11px; background: var(--bg2); color: var(--text2); padding: 3px 10px; border-radius: 10px; border: 1px solid var(--border); }
+.match-row { display: flex; align-items: center; gap: 8px; padding: 9px 0; border-bottom: 1px solid var(--border); }
+.match-row:last-child { border-bottom: none; padding-bottom: 0; }
+.team { flex: 1; font-size: 13px; display: flex; align-items: center; gap: 6px; overflow: hidden; }
+.team.right { justify-content: flex-end; flex-direction: row-reverse; }
+.team-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; }
+.flag { font-size: 20px; line-height: 1; flex-shrink: 0; }
+.score-wrap { display: flex; flex-direction: column; align-items: center; gap: 3px; flex-shrink: 0; }
+.score-inputs { display: flex; align-items: center; gap: 5px; }
+.score-inp { width: 40px; height: 36px; text-align: center; font-size: 17px; font-weight: 700; border: 1px solid var(--border2); border-radius: 8px; background: var(--bg2); color: var(--text); font-family: inherit; transition: border-color 0.15s; }
+.score-inp:focus { outline: none; border-color: var(--blue); }
+.score-inp.result { border-color: var(--blue); }
+.score-inp.saved { border-color: var(--green); }
+.score-sep { font-size: 18px; color: var(--text3); font-weight: 700; }
+.match-date { font-size: 10px; color: var(--text3); white-space: nowrap; }
+
+/* PROGRESS */
+.progress-bar { height: 4px; border-radius: 2px; background: var(--bg3); overflow: hidden; }
+.progress-fill { height: 100%; background: var(--blue); border-radius: 2px; transition: width 0.4s ease; }
+
+/* RANKING TABLE */
+.rank-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.rank-table th { font-size: 11px; color: var(--text2); font-weight: 600; text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); text-transform: uppercase; letter-spacing: 0.5px; }
+.rank-table td { padding: 10px 8px; border-bottom: 1px solid var(--border); }
+.rank-table tr:last-child td { border-bottom: none; }
+.rank-badge { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; font-size: 11px; font-weight: 700; }
+.r1 { background: var(--gold); color: var(--gold-text); }
+.r2 { background: var(--silver); color: var(--silver-text); }
+.r3 { background: var(--bronze); color: var(--bronze-text); }
+.rn { background: var(--bg2); color: var(--text2); }
+.pts-big { font-size: 18px; font-weight: 700; color: var(--blue); }
+.green-val { color: var(--green); font-weight: 600; }
+.blue-val { color: var(--blue); font-weight: 500; }
+
+/* TIP CHIPS */
+.chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+.chip { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 500; }
+.chip-exact { background: #E1F5EE; color: #0F6E56; border: 1px solid rgba(15,110,86,0.2); }
+.chip-dir { background: var(--blue-bg); color: var(--blue); border: 1px solid rgba(24,95,165,0.2); }
+.chip-miss { background: var(--red-bg); color: var(--red); border: 1px solid rgba(163,45,45,0.2); }
+.chip-none { background: var(--bg2); color: var(--text3); border: 1px solid var(--border); }
+
+/* MISC */
+.empty { text-align: center; padding: 2.5rem 1rem; color: var(--text2); font-size: 14px; }
+.empty-icon { font-size: 36px; margin-bottom: 8px; }
+.divider { border: none; border-top: 1px solid var(--border); margin: 1rem 0; }
+.info-box { background: var(--blue-bg); border-radius: var(--r); padding: 10px 14px; font-size: 13px; color: var(--blue); margin-bottom: 1rem; border: 1px solid rgba(24,95,165,0.15); line-height: 1.6; }
+.config-notice { background: var(--amber-bg); border-radius: var(--r); padding: 12px 16px; font-size: 13px; color: var(--amber); margin-bottom: 1rem; border: 1px solid rgba(186,117,23,0.2); line-height: 1.7; }
+.config-notice code { background: rgba(0,0,0,0.08); padding: 1px 5px; border-radius: 4px; font-family: monospace; font-size: 12px; }
+.loader { display: inline-block; width: 14px; height: 14px; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.saving-indicator { font-size: 12px; color: var(--green); display: none; margin-left: 8px; }
+
+/* SETUP SCREEN */
+.setup-screen { max-width: 480px; margin: 3rem auto; padding: 1.5rem; }
+.setup-screen .card { text-align: left; }
+.setup-screen h2 { font-size: 20px; font-weight: 700; margin-bottom: 0.5rem; }
+.setup-screen p { font-size: 14px; color: var(--text2); line-height: 1.6; margin-bottom: 1rem; }
+.code-block { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); padding: 12px; font-family: monospace; font-size: 12px; line-height: 1.7; color: var(--text); white-space: pre-wrap; margin-bottom: 1rem; overflow-x: auto; }
+.step { display: flex; gap: 12px; margin-bottom: 1rem; }
+.step-num { width: 24px; height: 24px; border-radius: 50%; background: var(--blue); color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+.step-content { font-size: 13px; line-height: 1.6; color: var(--text2); }
+.step-content strong { color: var(--text); }
+
+/* AVATAR COLORS */
+.av0{background:#E6F1FB;color:#0C447C} .av1{background:#E1F5EE;color:#085041} .av2{background:#FAEEDA;color:#412402}
+.av3{background:#FAECE7;color:#4A1B0C} .av4{background:#FBEAF0;color:#4B1528} .av5{background:#EAF3DE;color:#173404}
+.av6{background:#FCEBEB;color:#501313} .av7{background:#EEEDFE;color:#26215C} .av8{background:#E1F5EE;color:#085041}
+</style>
+</head>
+<body>
+
+<!-- SETUP SCREEN (shown when not configured) -->
+<div id="setupScreen" class="setup-screen" style="display:none;">
+  <div class="card">
+    <h2>⚙️ Nastavení Supabase</h2>
+    <p>Zadej přihlašovací údaje k tvému Supabase projektu. Najdeš je v Supabase dashboardu pod <strong>Settings → API</strong>.</p>
+    <div class="field">
+      <label>Supabase URL</label>
+      <input class="input" id="cfgUrl" placeholder="https://xxxxx.supabase.co" />
+    </div>
+    <div class="field">
+      <label>Anon Key (public)</label>
+      <input class="input" id="cfgKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." />
+    </div>
+    <button class="btn primary" style="width:100%; justify-content:center;" onclick="saveConfig()">Uložit a připojit</button>
+  </div>
+  <div class="card" style="margin-top:1rem;">
+    <div class="card-title">Jak nastavit Supabase</div>
+    <div class="step"><div class="step-num">1</div><div class="step-content">Jdi na <strong>supabase.com</strong>, vytvoř účet a nový projekt</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-content">V levém menu klikni na <strong>SQL Editor</strong> a spusť SQL níže</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-content">Jdi do <strong>Settings → API</strong> a zkopíruj URL a anon key sem</div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-content">Hotovo — aplikace se připojí a data budou sdílená pro všechny!</div></div>
+    <hr class="divider">
+    <div style="font-size:13px; font-weight:600; margin-bottom:8px;">SQL pro vytvoření tabulek (zkopíruj do SQL Editoru):</div>
+    <div class="code-block" id="sqlCode">-- Hráči
+CREATE TABLE players (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text UNIQUE NOT NULL,
+  created_at timestamptz DEFAULT now()
+);
+
+-- Tipy hráčů
+CREATE TABLE tips (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  player_name text NOT NULL REFERENCES players(name) ON DELETE CASCADE,
+  match_id text NOT NULL,
+  home_score integer,
+  away_score integer,
+  updated_at timestamptz DEFAULT now(),
+  UNIQUE(player_name, match_id)
+);
+
+-- Skutečné výsledky
+CREATE TABLE results (
+  match_id text PRIMARY KEY,
+  home_score integer,
+  away_score integer,
+  updated_at timestamptz DEFAULT now()
+);
+
+-- Veřejný přístup (Row Level Security)
+ALTER TABLE players ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tips ENABLE ROW LEVEL SECURITY;
+ALTER TABLE results ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "public read players" ON players FOR SELECT USING (true);
+CREATE POLICY "public insert players" ON players FOR INSERT WITH CHECK (true);
+CREATE POLICY "public delete players" ON players FOR DELETE USING (true);
+
+CREATE POLICY "public read tips" ON tips FOR SELECT USING (true);
+CREATE POLICY "public upsert tips" ON tips FOR INSERT WITH CHECK (true);
+CREATE POLICY "public update tips" ON tips FOR UPDATE USING (true);
+
+CREATE POLICY "public read results" ON results FOR SELECT USING (true);
+CREATE POLICY "public upsert results" ON results FOR INSERT WITH CHECK (true);
+CREATE POLICY "public update results" ON results FOR UPDATE USING (true);
+
+-- Tipy na vyřazovací část
+CREATE TABLE knockout_tips (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  player_name text NOT NULL REFERENCES players(name) ON DELETE CASCADE,
+  match_id text NOT NULL,
+  winner text,
+  home_score integer,
+  away_score integer,
+  updated_at timestamptz DEFAULT now(),
+  UNIQUE(player_name, match_id)
+);
+
+CREATE POLICY "public read knockout_tips" ON knockout_tips FOR SELECT USING (true);
+CREATE POLICY "public upsert knockout_tips" ON knockout_tips FOR INSERT WITH CHECK (true);
+CREATE POLICY "public update knockout_tips" ON knockout_tips FOR UPDATE USING (true);
+
+-- Výsledky vyřazovací části
+CREATE TABLE knockout_results (
+  match_id text PRIMARY KEY,
+  home_team text,
+  away_team text,
+  home_score integer,
+  away_score integer,
+  home_pens integer,
+  away_pens integer,
+  winner text,
+  updated_at timestamptz DEFAULT now()
+);
+
+CREATE POLICY "public read knockout_results" ON knockout_results FOR SELECT USING (true);
+CREATE POLICY "public upsert knockout_results" ON knockout_results FOR INSERT WITH CHECK (true);
+CREATE POLICY "public update knockout_results" ON knockout_results FOR UPDATE USING (true);</div>
+    <button class="btn sm" onclick="copySQL()">📋 Kopírovat SQL</button>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="mainApp" style="display:none;">
+  <div class="app">
+    <div class="header">
+      <h1>⚽ MS 2026 — Tipovačka</h1>
+      <p>Tipuj zápasy, sbírej body, staň se šampionem</p>
+      <div class="pill">🇺🇸 USA · 🇨🇦 Kanada · 🇲🇽 Mexiko · 11.6–19.7.2026</div>
+    </div>
+
+    <div id="statusBar" class="status-bar connecting" style="margin:0; border-radius:0; border-left:none; border-right:none;">
+      <div class="dot pulse"></div>
+      <span id="statusText">Připojuji se k databázi...</span>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('players',this)">👤 Hráči</button>
+      <button class="tab" onclick="showTab('tips',this)">✏️ Tipy</button>
+      <button class="tab" onclick="showTab('results',this)">📋 Výsledky</button>
+      <button class="tab" onclick="showTab('knockout',this)">⚔️ Vyřazovací</button>
+      <button class="tab" onclick="showTab('ranking',this)">🏆 Tabulka</button>
+    </div>
+
+    <div class="content">
+
+      <!-- HRÁČI -->
+      <div id="players" class="section active">
+        <div class="card">
+          <div class="card-title">Přidat hráče</div>
+          <div style="display:flex;gap:8px;">
+            <input class="input" id="newName" placeholder="Tvoje jméno..." maxlength="30" onkeydown="if(event.key==='Enter')addPlayer()" style="flex:1;" />
+            <button class="btn primary" onclick="addPlayer()" id="addBtn">+ Přidat</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Registrovaní hráči <span id="playerCount">0 hráčů</span></div>
+          <div id="playerList"><div class="empty"><div class="empty-icon">👥</div>Zatím žádní hráči</div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Bodování</div>
+          <div style="font-size:14px; line-height:2; color:var(--text2);">
+            <span style="color:var(--blue); font-weight:700; font-size:18px;">3</span> body — přesný výsledek &nbsp;·&nbsp;
+            <span style="color:var(--blue); font-weight:700; font-size:18px;">2</span> body — správný vítěz / remíza &nbsp;·&nbsp;
+            <span style="color:var(--text3); font-weight:700; font-size:18px;">0</span> bodů — špatný tip
+          </div>
+        </div>
+      </div>
+
+      <!-- TIPY -->
+      <div id="tips" class="section">
+        <div id="tipsPlayerBar"></div>
+        <div id="tipsContent"></div>
+      </div>
+
+      <!-- VÝSLEDKY -->
+      <div id="results" class="section">
+        <div class="info-box">📝 Tato záložka je pro pořadatele — zadej skutečné výsledky. Body se přepočítají automaticky pro všechny.</div>
+        <div id="resultsContent"></div>
+      </div>
+
+      <!-- VYŘAZOVACÍ ČÁST -->
+      <div id="knockout" class="section">
+        <div id="knockoutContent"></div>
+      </div>
+
+      <!-- TABULKA -->
+      <div id="ranking" class="section">
+        <div id="rankingContent"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── KONFIGURACE ────────────────────────────────────────────────
+// Buď nastav přímo zde, nebo přes setup screen
+const SUPABASE_URL = '';
+const SUPABASE_ANON_KEY = '';
+
+// ─── ZÁPASY ─────────────────────────────────────────────────────
+// Všech 72 zápasů skupinové fáze MS 2026 - správné losování
+const MATCHES = [
+  // SKUPINA A: Mexiko, Jihoafrická republika, Jižní Korea, Česko
+  {id:'a1',date:'11.6.',g:'A',h:'🇲🇽',a:'🇿🇦',hn:'Mexiko',an:'J. Afrika'},
+  {id:'a2',date:'12.6.',g:'A',h:'🇰🇷',a:'🇨🇿',hn:'Jižní Korea',an:'Česko'},
+  {id:'a3',date:'18.6.',g:'A',h:'🇨🇿',a:'🇿🇦',hn:'Česko',an:'J. Afrika'},
+  {id:'a4',date:'19.6.',g:'A',h:'🇲🇽',a:'🇰🇷',hn:'Mexiko',an:'Jižní Korea'},
+  {id:'a5',date:'25.6.',g:'A',h:'🇨🇿',a:'🇲🇽',hn:'Česko',an:'Mexiko'},
+  {id:'a6',date:'25.6.',g:'A',h:'🇿🇦',a:'🇰🇷',hn:'J. Afrika',an:'Jižní Korea'},
+  // SKUPINA B: Kanada, Bosna a Hercegovina, Katar, Švýcarsko
+  {id:'b1',date:'12.6.',g:'B',h:'🇨🇦',a:'🇧🇦',hn:'Kanada',an:'Bosna'},
+  {id:'b2',date:'13.6.',g:'B',h:'🇶🇦',a:'🇨🇭',hn:'Katar',an:'Švýcarsko'},
+  {id:'b3',date:'18.6.',g:'B',h:'🇨🇭',a:'🇧🇦',hn:'Švýcarsko',an:'Bosna'},
+  {id:'b4',date:'19.6.',g:'B',h:'🇨🇦',a:'🇶🇦',hn:'Kanada',an:'Katar'},
+  {id:'b5',date:'24.6.',g:'B',h:'🇨🇭',a:'🇨🇦',hn:'Švýcarsko',an:'Kanada'},
+  {id:'b6',date:'24.6.',g:'B',h:'🇧🇦',a:'🇶🇦',hn:'Bosna',an:'Katar'},
+  // SKUPINA C: Brazílie, Maroko, Haiti, Skotsko
+  {id:'c1',date:'14.6.',g:'C',h:'🇧🇷',a:'🇲🇦',hn:'Brazílie',an:'Maroko'},
+  {id:'c2',date:'14.6.',g:'C',h:'🇭🇹',a:'🇬🇧',hn:'Haiti',an:'Skotsko'},
+  {id:'c3',date:'20.6.',g:'C',h:'🇬🇧',a:'🇲🇦',hn:'Skotsko',an:'Maroko'},
+  {id:'c4',date:'20.6.',g:'C',h:'🇧🇷',a:'🇭🇹',hn:'Brazílie',an:'Haiti'},
+  {id:'c5',date:'25.6.',g:'C',h:'🇲🇦',a:'🇭🇹',hn:'Maroko',an:'Haiti'},
+  {id:'c6',date:'25.6.',g:'C',h:'🇬🇧',a:'🇧🇷',hn:'Skotsko',an:'Brazílie'},
+  // SKUPINA D: USA, Paraguay, Austrálie, Turecko
+  {id:'d1',date:'13.6.',g:'D',h:'🇺🇸',a:'🇵🇾',hn:'USA',an:'Paraguay'},
+  {id:'d2',date:'14.6.',g:'D',h:'🇦🇺',a:'🇹🇷',hn:'Austrálie',an:'Turecko'},
+  {id:'d3',date:'19.6.',g:'D',h:'🇺🇸',a:'🇦🇺',hn:'USA',an:'Austrálie'},
+  {id:'d4',date:'20.6.',g:'D',h:'🇹🇷',a:'🇵🇾',hn:'Turecko',an:'Paraguay'},
+  {id:'d5',date:'26.6.',g:'D',h:'🇹🇷',a:'🇺🇸',hn:'Turecko',an:'USA'},
+  {id:'d6',date:'26.6.',g:'D',h:'🇵🇾',a:'🇦🇺',hn:'Paraguay',an:'Austrálie'},
+  // SKUPINA E: Německo, Curaçao, Pobřeží slonoviny, Ekvádor
+  {id:'e1',date:'14.6.',g:'E',h:'🇩🇪',a:'🇨🇼',hn:'Německo',an:'Curaçao'},
+  {id:'e2',date:'15.6.',g:'E',h:'🇨🇮',a:'🇪🇨',hn:'P. slonoviny',an:'Ekvádor'},
+  {id:'e3',date:'20.6.',g:'E',h:'🇩🇪',a:'🇨🇮',hn:'Německo',an:'P. slonoviny'},
+  {id:'e4',date:'21.6.',g:'E',h:'🇪🇨',a:'🇨🇼',hn:'Ekvádor',an:'Curaçao'},
+  {id:'e5',date:'25.6.',g:'E',h:'🇨🇼',a:'🇨🇮',hn:'Curaçao',an:'P. slonoviny'},
+  {id:'e6',date:'25.6.',g:'E',h:'🇪🇨',a:'🇩🇪',hn:'Ekvádor',an:'Německo'},
+  // SKUPINA F: Nizozemsko, Japonsko, Švédsko, Tunisko
+  {id:'f1',date:'14.6.',g:'F',h:'🇳🇱',a:'🇯🇵',hn:'Nizozemsko',an:'Japonsko'},
+  {id:'f2',date:'15.6.',g:'F',h:'🇸🇪',a:'🇹🇳',hn:'Švédsko',an:'Tunisko'},
+  {id:'f3',date:'20.6.',g:'F',h:'🇳🇱',a:'🇸🇪',hn:'Nizozemsko',an:'Švédsko'},
+  {id:'f4',date:'21.6.',g:'F',h:'🇹🇳',a:'🇯🇵',hn:'Tunisko',an:'Japonsko'},
+  {id:'f5',date:'26.6.',g:'F',h:'🇯🇵',a:'🇸🇪',hn:'Japonsko',an:'Švédsko'},
+  {id:'f6',date:'26.6.',g:'F',h:'🇹🇳',a:'🇳🇱',hn:'Tunisko',an:'Nizozemsko'},
+  // SKUPINA G: Belgie, Egypt, Írán, Nový Zéland
+  {id:'g1',date:'15.6.',g:'G',h:'🇧🇪',a:'🇪🇬',hn:'Belgie',an:'Egypt'},
+  {id:'g2',date:'16.6.',g:'G',h:'🇮🇷',a:'🇳🇿',hn:'Írán',an:'Nový Zéland'},
+  {id:'g3',date:'21.6.',g:'G',h:'🇧🇪',a:'🇮🇷',hn:'Belgie',an:'Írán'},
+  {id:'g4',date:'22.6.',g:'G',h:'🇳🇿',a:'🇪🇬',hn:'Nový Zéland',an:'Egypt'},
+  {id:'g5',date:'27.6.',g:'G',h:'🇧🇪',a:'🇳🇿',hn:'Belgie',an:'Nový Zéland'},
+  {id:'g6',date:'27.6.',g:'G',h:'🇪🇬',a:'🇮🇷',hn:'Egypt',an:'Írán'},
+  // SKUPINA H: Španělsko, Kapverdy, Saúdská Arábie, Uruguay
+  {id:'h1',date:'15.6.',g:'H',h:'🇪🇸',a:'🇨🇻',hn:'Španělsko',an:'Kapverdy'},
+  {id:'h2',date:'16.6.',g:'H',h:'🇸🇦',a:'🇺🇾',hn:'S. Arábie',an:'Uruguay'},
+  {id:'h3',date:'21.6.',g:'H',h:'🇪🇸',a:'🇸🇦',hn:'Španělsko',an:'S. Arábie'},
+  {id:'h4',date:'22.6.',g:'H',h:'🇺🇾',a:'🇨🇻',hn:'Uruguay',an:'Kapverdy'},
+  {id:'h5',date:'27.6.',g:'H',h:'🇪🇸',a:'🇺🇾',hn:'Španělsko',an:'Uruguay'},
+  {id:'h6',date:'27.6.',g:'H',h:'🇨🇻',a:'🇸🇦',hn:'Kapverdy',an:'S. Arábie'},
+  // SKUPINA I: Francie, Senegal, Irák, Norsko
+  {id:'i1',date:'16.6.',g:'I',h:'🇫🇷',a:'🇸🇳',hn:'Francie',an:'Senegal'},
+  {id:'i2',date:'17.6.',g:'I',h:'🇮🇶',a:'🇳🇴',hn:'Irák',an:'Norsko'},
+  {id:'i3',date:'22.6.',g:'I',h:'🇫🇷',a:'🇮🇶',hn:'Francie',an:'Irák'},
+  {id:'i4',date:'23.6.',g:'I',h:'🇳🇴',a:'🇸🇳',hn:'Norsko',an:'Senegal'},
+  {id:'i5',date:'26.6.',g:'I',h:'🇳🇴',a:'🇫🇷',hn:'Norsko',an:'Francie'},
+  {id:'i6',date:'26.6.',g:'I',h:'🇸🇳',a:'🇮🇶',hn:'Senegal',an:'Irák'},
+  // SKUPINA J: Argentina, Alžírsko, Rakousko, Jordánsko
+  {id:'j1',date:'17.6.',g:'J',h:'🇦🇷',a:'🇩🇿',hn:'Argentina',an:'Alžírsko'},
+  {id:'j2',date:'17.6.',g:'J',h:'🇦🇹',a:'🇯🇴',hn:'Rakousko',an:'Jordánsko'},
+  {id:'j3',date:'22.6.',g:'J',h:'🇦🇷',a:'🇦🇹',hn:'Argentina',an:'Rakousko'},
+  {id:'j4',date:'23.6.',g:'J',h:'🇯🇴',a:'🇩🇿',hn:'Jordánsko',an:'Alžírsko'},
+  {id:'j5',date:'27.6.',g:'J',h:'🇦🇷',a:'🇯🇴',hn:'Argentina',an:'Jordánsko'},
+  {id:'j6',date:'27.6.',g:'J',h:'🇩🇿',a:'🇦🇹',hn:'Alžírsko',an:'Rakousko'},
+  // SKUPINA K: Portugalsko, DR Kongo, Uzbekistán, Kolumbie
+  {id:'k1',date:'17.6.',g:'K',h:'🇵🇹',a:'🇨🇩',hn:'Portugalsko',an:'DR Kongo'},
+  {id:'k2',date:'18.6.',g:'K',h:'🇺🇿',a:'🇨🇴',hn:'Uzbekistán',an:'Kolumbie'},
+  {id:'k3',date:'23.6.',g:'K',h:'🇵🇹',a:'🇺🇿',hn:'Portugalsko',an:'Uzbekistán'},
+  {id:'k4',date:'24.6.',g:'K',h:'🇨🇴',a:'🇨🇩',hn:'Kolumbie',an:'DR Kongo'},
+  {id:'k5',date:'28.6.',g:'K',h:'🇵🇹',a:'🇨🇴',hn:'Portugalsko',an:'Kolumbie'},
+  {id:'k6',date:'28.6.',g:'K',h:'🇨🇩',a:'🇺🇿',hn:'DR Kongo',an:'Uzbekistán'},
+  // SKUPINA L: Anglie, Chorvatsko, Ghana, Panama
+  {id:'l1',date:'17.6.',g:'L',h:'🇬🇧',a:'🇭🇷',hn:'Anglie',an:'Chorvatsko'},
+  {id:'l2',date:'18.6.',g:'L',h:'🇬🇭',a:'🇵🇦',hn:'Ghana',an:'Panama'},
+  {id:'l3',date:'23.6.',g:'L',h:'🇬🇧',a:'🇬🇭',hn:'Anglie',an:'Ghana'},
+  {id:'l4',date:'24.6.',g:'L',h:'🇵🇦',a:'🇭🇷',hn:'Panama',an:'Chorvatsko'},
+  {id:'l5',date:'28.6.',g:'L',h:'🇬🇧',a:'🇵🇦',hn:'Anglie',an:'Panama'},
+  {id:'l6',date:'28.6.',g:'L',h:'🇭🇷',a:'🇬🇭',hn:'Chorvatsko',an:'Ghana'},
+];;
+const GROUPS = ['A','B','C','D','E','F','G','H','I','J','K','L'];
+
+// Vyřazovací kolo — skutečný bracket MS 2026
+// Skupinová fáze skončila, týmy jsou pevně dané
+const KNOCKOUT_ROUNDS = [
+  { id: 'r32', name: 'Osmnáctifinále (Round of 32)', matches: [
+    // 28.6.
+    {id:'r32_1',  date:'28.6.', h:'🇿🇦', a:'🇨🇦', hn:'J. Afrika',   an:'Kanada'},
+    {id:'r32_2',  date:'28.6.', h:'🇧🇷', a:'🇯🇵', hn:'Brazílie',    an:'Japonsko'},
+    // 29.6.
+    {id:'r32_3',  date:'29.6.', h:'🇩🇪', a:'🇵🇾', hn:'Německo',     an:'Paraguay'},
+    {id:'r32_4',  date:'29.6.', h:'🇳🇱', a:'🇲🇦', hn:'Nizozemsko',  an:'Maroko'},
+    // 30.6.
+    {id:'r32_5',  date:'30.6.', h:'🇫🇷', a:'🇸🇪', hn:'Francie',     an:'Švédsko'},
+    {id:'r32_6',  date:'30.6.', h:'🇨🇮', a:'🇳🇴', hn:'P. slonoviny',an:'Norsko'},
+    // 1.7.
+    {id:'r32_7',  date:'1.7.',  h:'🇺🇸', a:'🇧🇦', hn:'USA',         an:'Bosna'},
+    {id:'r32_8',  date:'1.7.',  h:'🇨🇭', a:'🇩🇿', hn:'Švýcarsko',   an:'Alžírsko'},
+    // 2.7.
+    {id:'r32_9',  date:'2.7.',  h:'🇧🇪', a:'🇸🇳', hn:'Belgie',      an:'Senegal'},
+    {id:'r32_10', date:'2.7.',  h:'🇵🇹', a:'🇺🇿', hn:'Portugalsko', an:'Uzbekistán'},
+    // 3.7.
+    {id:'r32_11', date:'3.7.',  h:'🇦🇷', a:'🇨🇻', hn:'Argentina',   an:'Kapverdy'},
+    {id:'r32_12', date:'3.7.',  h:'🇦🇺', a:'🇪🇬', hn:'Austrálie',   an:'Egypt'},
+    // 4.7.
+    {id:'r32_13', date:'4.7.',  h:'🇲🇽', a:'🇪🇨', hn:'Mexiko',      an:'Ekvádor'},
+    {id:'r32_14', date:'4.7.',  h:'🇪🇸', a:'🇨🇩', hn:'Španělsko',   an:'DR Kongo'},
+    // 5.7.
+    {id:'r32_15', date:'5.7.',  h:'🇬🇧', a:'🇬🇭', hn:'Anglie',      an:'Ghana'},
+    {id:'r32_16', date:'5.7.',  h:'🇨🇴', a:'🇦🇹', hn:'Kolumbie',    an:'Rakousko'},
+  ]},
+  { id: 'r16', name: 'Šestnáctifinále', matches: [
+    {id:'r16_1', date:'7.7.',  slot1:'W r32_1',  slot2:'W r32_2'},
+    {id:'r16_2', date:'7.7.',  slot1:'W r32_3',  slot2:'W r32_4'},
+    {id:'r16_3', date:'8.7.',  slot1:'W r32_5',  slot2:'W r32_6'},
+    {id:'r16_4', date:'8.7.',  slot1:'W r32_7',  slot2:'W r32_8'},
+    {id:'r16_5', date:'9.7.',  slot1:'W r32_9',  slot2:'W r32_10'},
+    {id:'r16_6', date:'9.7.',  slot1:'W r32_11', slot2:'W r32_12'},
+    {id:'r16_7', date:'10.7.', slot1:'W r32_13', slot2:'W r32_14'},
+    {id:'r16_8', date:'10.7.', slot1:'W r32_15', slot2:'W r32_16'},
+  ]},
+  { id: 'qf', name: 'Čtvrtfinále', matches: [
+    {id:'qf_1', date:'12.7.', slot1:'W r16_1', slot2:'W r16_2'},
+    {id:'qf_2', date:'12.7.', slot1:'W r16_3', slot2:'W r16_4'},
+    {id:'qf_3', date:'13.7.', slot1:'W r16_5', slot2:'W r16_6'},
+    {id:'qf_4', date:'13.7.', slot1:'W r16_7', slot2:'W r16_8'},
+  ]},
+  { id: 'sf', name: 'Semifinále', matches: [
+    {id:'sf_1', date:'15.7.', slot1:'W qf_1', slot2:'W qf_2'},
+    {id:'sf_2', date:'16.7.', slot1:'W qf_3', slot2:'W qf_4'},
+  ]},
+  { id: 'final', name: 'Finále & O 3. místo', matches: [
+    {id:'3rd',   date:'18.7.', slot1:'L sf_1', slot2:'L sf_2'},
+    {id:'final', date:'19.7.', slot1:'W sf_1', slot2:'W sf_2'},
+  ]},
+];
+const AVATAR_COLORS = ['av0','av1','av2','av3','av4','av5','av6','av7','av8'];
+
+// ─── STATE ───────────────────────────────────────────────────────
+let sbClient = null;
+let players = [];
+let tips = {};           // { playerName: { matchId: {h, a} } }
+let results = {};        // { matchId: {h, a} }
+let knockoutResults = {}; // { matchId: {home_team, away_team, home_score, away_score, home_pens, away_pens, winner} }
+let knockoutTips = {};   // { playerName: { matchId: {winner, home_score, away_score} } }
+let activePlayer = null;
+let saveTimers = {};
+
+// ─── INIT ────────────────────────────────────────────────────────
+function getConfig() {
+  const url = SUPABASE_URL || localStorage.getItem('sb_url') || '';
+  const key = SUPABASE_ANON_KEY || localStorage.getItem('sb_key') || '';
+  return { url, key };
+}
+
+function saveConfig() {
+  const url = document.getElementById('cfgUrl').value.trim();
+  const key = document.getElementById('cfgKey').value.trim();
+  if (!url || !key) { alert('Vyplň obě pole!'); return; }
+  localStorage.setItem('sb_url', url);
+  localStorage.setItem('sb_key', key);
+  location.reload();
+}
+
+function copySQL() {
+  const sql = document.getElementById('sqlCode').textContent;
+  navigator.clipboard.writeText(sql).then(() => alert('SQL zkopírováno!')).catch(() => {});
+}
+
+async function init() {
+  const { url, key } = getConfig();
+  if (!url || !key) {
+    document.getElementById('setupScreen').style.display = 'block';
+    return;
+  }
+  document.getElementById('mainApp').style.display = 'block';
+  try {
+    sbClient = window.supabase.createClient(url, key);
+    await loadAll();
+    setStatus('ok', '✓ Připojeno k databázi');
+    subscribeRealtime();
+  } catch(e) {
+    setStatus('error', '✗ Chyba připojení — zkontroluj URL a klíč');
+    console.error(e);
+  }
+}
+
+function setStatus(type, text) {
+  const bar = document.getElementById('statusBar');
+  const dot = bar.querySelector('.dot');
+  bar.className = 'status-bar ' + type;
+  dot.className = 'dot' + (type === 'connecting' ? ' pulse' : '');
+  document.getElementById('statusText').textContent = text;
+}
+
+// ─── DATA LOADING ────────────────────────────────────────────────
+async function loadAll() {
+  const [{ data: pData }, { data: tData }, { data: rData }] = await Promise.all([
+    sbClient.from('players').select('*').order('created_at'),
+    sbClient.from('tips').select('*'),
+    sbClient.from('results').select('*'),
+  ]);
+
+  players = (pData || []).map(p => p.name);
+
+  tips = {};
+  players.forEach(p => { tips[p] = {}; });
+  (tData || []).forEach(t => {
+    if (!tips[t.player_name]) tips[t.player_name] = {};
+    tips[t.player_name][t.match_id] = { h: t.home_score, a: t.away_score };
+  });
+
+  results = {};
+  (rData || []).forEach(r => {
+    results[r.match_id] = { h: r.home_score, a: r.away_score };
+  });
+
+  if (!activePlayer && players.length) activePlayer = players[0];
+  renderAll();
+}
+
+// ─── REALTIME ────────────────────────────────────────────────────
+function subscribeRealtime() {
+  sbClient.channel('ms2026')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, () => loadAll())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'tips' }, (payload) => {
+      const t = payload.new;
+      if (t && t.player_name) {
+        if (!tips[t.player_name]) tips[t.player_name] = {};
+        tips[t.player_name][t.match_id] = { h: t.home_score, a: t.away_score };
+        renderRanking();
+      }
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'results' }, (payload) => {
+      const r = payload.new;
+      if (r) {
+        results[r.match_id] = { h: r.home_score, a: r.away_score };
+        renderRanking();
+      }
+    })
+    .subscribe();
+}
+
+// ─── HRÁČI ───────────────────────────────────────────────────────
+async function addPlayer() {
+  const v = document.getElementById('newName').value.trim();
+  if (!v) return;
+  const btn = document.getElementById('addBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loader"></span>';
+  const { error } = await sbClient.from('players').insert({ name: v });
+  btn.disabled = false;
+  btn.innerHTML = '+ Přidat';
+  if (error) { alert(error.code === '23505' ? 'Hráč "' + v + '" již existuje!' : 'Chyba: ' + error.message); return; }
+  document.getElementById('newName').value = '';
+  await loadAll();
+}
+
+async function removePlayer(name) {
+  if (!confirm('Odebrat hráče "' + name + '"? Všechny jeho tipy budou smazány.')) return;
+  await sbClient.from('players').delete().eq('name', name);
+  if (activePlayer === name) activePlayer = players.filter(p=>p!==name)[0] || null;
+  await loadAll();
+}
+
+function renderPlayerList() {
+  const el = document.getElementById('playerList');
+  document.getElementById('playerCount').textContent = players.length + (players.length === 1 ? ' hráč' : players.length < 5 ? ' hráči' : ' hráčů');
+  if (!players.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">👥</div>Zatím žádní hráči</div>'; return; }
+  el.innerHTML = players.map((p, i) => {
+    const filled = Object.values(tips[p]||{}).filter(t=>t.h!=null&&t.a!=null).length;
+    const initials = p.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    return `<div class="player-row">
+      <div class="avatar ${AVATAR_COLORS[i % AVATAR_COLORS.length]}">${initials}</div>
+      <div class="player-info">
+        <div class="player-name">${p}</div>
+        <div class="player-meta">${filled} / ${MATCHES.length} tipů zadáno</div>
+      </div>
+      <button class="btn danger sm" onclick="removePlayer('${esc(p)}')">Odebrat</button>
+    </div>`;
+  }).join('');
+}
+
+// ─── TIPY ────────────────────────────────────────────────────────
+function renderTipsPlayerBar() {
+  const el = document.getElementById('tipsPlayerBar');
+  if (!players.length) { el.innerHTML = '<div class="card"><div class="empty"><div class="empty-icon">👆</div>Nejprve přidej hráče na záložce Hráči</div></div>'; return; }
+  if (!activePlayer || !players.includes(activePlayer)) activePlayer = players[0];
+  const t = tips[activePlayer] || {};
+  const filled = Object.values(t).filter(x=>x.h!=null&&x.a!=null).length;
+  const pct = Math.round(filled / MATCHES.length * 100);
+  el.innerHTML = `<div class="card" style="margin-bottom:1rem;">
+    <div style="font-size:12px;color:var(--text2);margin-bottom:8px;font-weight:500;">TIPY ZA HRÁČE:</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;">
+      ${players.map((p,i)=>{
+        const initials = p.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+        return `<button class="btn sm ${p===activePlayer?'active':''}" onclick="setActivePlayer('${esc(p)}')" style="gap:6px;">
+          <span style="width:20px;height:20px;border-radius:50%;background:var(--${p===activePlayer?'blue-dark':'bg3'});color:${p===activePlayer?'#fff':'var(--text2)'};font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;">${initials}</span>
+          ${p}
+        </button>`;
+      }).join('')}
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+      <span style="font-size:12px;color:var(--text2);">${filled} / ${MATCHES.length} tipů</span>
+      <span style="font-size:12px;font-weight:600;color:var(--blue);">${pct}%</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="tipProgress" style="width:${pct}%"></div></div>
+  </div>`;
+}
+
+function setActivePlayer(name) { activePlayer = name; renderTips(); }
+
+function renderTipsContent() {
+  const el = document.getElementById('tipsContent');
+  if (!activePlayer) { el.innerHTML = ''; return; }
+  const t = tips[activePlayer] || {};
+  el.innerHTML = GROUPS.map(g => {
+    const gm = MATCHES.filter(m => m.g === g);
+    return `<div class="card">
+      <div class="group-header">
+        <div class="group-label">Skupina ${g}</div>
+        <div class="group-badge">${gm.filter(m=>{ const x=t[m.id]; return x&&x.h!=null&&x.a!=null; }).length}/${gm.length}</div>
+      </div>
+      ${gm.map(m => {
+        const tip = t[m.id] || {};
+        const res = results[m.id];
+        const pt = res ? calcPts(tip, res) : null;
+        const chipHtml = pt===3?'<span class="chip chip-exact">+3</span>':pt===2?'<span class="chip chip-dir">+2</span>':pt===0?'<span class="chip chip-miss">0</span>':'';
+        return `<div class="match-row">
+          <div class="team"><span class="flag">${m.h}</span><span class="team-name">${m.hn}</span></div>
+          <div class="score-wrap">
+            <div class="score-inputs">
+              <input class="score-inp" type="number" min="0" max="30" value="${tip.h!=null?tip.h:''}" placeholder="–" 
+                onchange="queueTip('${m.id}','h',this.value,this)" />
+              <span class="score-sep">:</span>
+              <input class="score-inp" type="number" min="0" max="30" value="${tip.a!=null?tip.a:''}" placeholder="–"
+                onchange="queueTip('${m.id}','a',this.value,this)" />
+            </div>
+            <div class="match-date">${m.date} ${chipHtml}</div>
+          </div>
+          <div class="team right"><span class="flag">${m.a}</span><span class="team-name">${m.an}</span></div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+}
+
+function renderTips() { renderTipsPlayerBar(); renderTipsContent(); }
+
+function queueTip(matchId, side, val, inputEl) {
+  if (!activePlayer) return;
+  if (!tips[activePlayer]) tips[activePlayer] = {};
+  if (!tips[activePlayer][matchId]) tips[activePlayer][matchId] = {};
+  tips[activePlayer][matchId][side] = val === '' ? null : parseInt(val);
+  inputEl.classList.add('saved');
+  setTimeout(() => inputEl.classList.remove('saved'), 1500);
+
+  const key = activePlayer + '_' + matchId;
+  clearTimeout(saveTimers[key]);
+  saveTimers[key] = setTimeout(() => flushTip(activePlayer, matchId), 800);
+
+  updateProgressBar();
+}
+
+async function flushTip(playerName, matchId) {
+  const tip = (tips[playerName] || {})[matchId] || {};
+  await sbClient.from('tips').upsert({
+    player_name: playerName,
+    match_id: matchId,
+    home_score: tip.h != null ? tip.h : null,
+    away_score: tip.a != null ? tip.a : null,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'player_name,match_id' });
+}
+
+function updateProgressBar() {
+  const t = tips[activePlayer] || {};
+  const filled = Object.values(t).filter(x=>x.h!=null&&x.a!=null).length;
+  const pct = Math.round(filled/MATCHES.length*100);
+  const bar = document.getElementById('tipProgress');
+  if (bar) bar.style.width = pct + '%';
+  const cnt = document.querySelector('#tipsPlayerBar [style*="tipProgress"]');
+}
+
+// ─── VÝSLEDKY ────────────────────────────────────────────────────
+function renderResults() {
+  const el = document.getElementById('resultsContent');
+  el.innerHTML = GROUPS.map(g => {
+    const gm = MATCHES.filter(m => m.g === g);
+    return `<div class="card">
+      <div class="group-header">
+        <div class="group-label">Skupina ${g}</div>
+        <div class="group-badge">${gm.filter(m=>results[m.id]?.h!=null).length}/${gm.length} zadáno</div>
+      </div>
+      ${gm.map(m => {
+        const r = results[m.id] || {};
+        return `<div class="match-row">
+          <div class="team"><span class="flag">${m.h}</span><span class="team-name">${m.hn}</span></div>
+          <div class="score-wrap">
+            <div class="score-inputs">
+              <input class="score-inp result" type="number" min="0" max="30" value="${r.h!=null?r.h:''}" placeholder="–"
+                onchange="queueResult('${m.id}','h',this.value,this)" />
+              <span class="score-sep">:</span>
+              <input class="score-inp result" type="number" min="0" max="30" value="${r.a!=null?r.a:''}" placeholder="–"
+                onchange="queueResult('${m.id}','a',this.value,this)" />
+            </div>
+            <div class="match-date">${m.date}</div>
+          </div>
+          <div class="team right"><span class="flag">${m.a}</span><span class="team-name">${m.an}</span></div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('') + renderKnockoutResults();
+}
+
+function queueResult(matchId, side, val, inputEl) {
+  if (!results[matchId]) results[matchId] = {};
+  results[matchId][side] = val === '' ? null : parseInt(val);
+  inputEl.classList.add('saved');
+  setTimeout(() => inputEl.classList.remove('saved'), 1500);
+  clearTimeout(saveTimers['result_' + matchId]);
+  saveTimers['result_' + matchId] = setTimeout(() => flushResult(matchId), 800);
+  renderRanking();
+}
+
+async function flushResult(matchId) {
+  const r = results[matchId] || {};
+  await sbClient.from('results').upsert({
+    match_id: matchId,
+    home_score: r.h != null ? r.h : null,
+    away_score: r.a != null ? r.a : null,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'match_id' });
+}
+
+// ─── TABULKA ─────────────────────────────────────────────────────
+function calcPts(tip, result) {
+  if (tip.h==null||tip.a==null||result.h==null||result.a==null) return null;
+  if (tip.h===result.h && tip.a===result.a) return 3;
+  if (Math.sign(tip.h-tip.a) === Math.sign(result.h-result.a)) return 2;
+  return 0;
+}
+
+function renderRanking() {
+  const el = document.getElementById('rankingContent');
+  if (!players.length) { el.innerHTML = '<div class="card"><div class="empty"><div class="empty-icon">🏆</div>Zatím žádní hráči</div></div>'; return; }
+
+  const playedMatches = MATCHES.filter(m => results[m.id]?.h != null);
+  // KO zápasy s výsledky
+  const playedKO = KNOCKOUT_ROUNDS.flatMap(r => r.matches).filter(m => knockoutResults[m.id]?.winner);
+
+  const rows = players.map((p, i) => {
+    let pts=0, exact=0, dir=0, miss=0;
+    playedMatches.forEach(m => {
+      const tip = (tips[p]||{})[m.id]||{};
+      const pt = calcPts(tip, results[m.id]);
+      if (pt===3){pts+=3;exact++;}
+      else if(pt===2){pts+=2;dir++;}
+      else if(pt===0){miss++;}
+    });
+    playedKO.forEach(m => {
+      const tip = (knockoutTips[p]||{})[m.id]||{};
+      const pt = calcKOPts(tip, knockoutResults[m.id]);
+      if (pt===3){pts+=3;exact++;}
+      else if(pt===2){pts+=2;dir++;}
+      else if(pt===0){miss++;}
+    });
+    return {name:p, pts, exact, dir, miss, idx:i};
+  }).sort((a,b)=>b.pts-a.pts||b.exact-a.exact);
+
+  el.innerHTML = `
+    <div class="card">
+      <div class="card-title">Pořadí <span>${playedMatches.length} / ${MATCHES.length} zápasů odehráno</span></div>
+      <table class="rank-table">
+        <thead><tr><th>#</th><th>Hráč</th><th>Body</th><th>Přesně</th><th>Směr</th><th>Špatně</th></tr></thead>
+        <tbody>${rows.map((r,i) => {
+          const cls = i===0?'r1':i===1?'r2':i===2?'r3':'rn';
+          const initials = r.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+          return `<tr>
+            <td><span class="rank-badge ${cls}">${i+1}</span></td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span class="avatar ${AVATAR_COLORS[r.idx%AVATAR_COLORS.length]}" style="width:28px;height:28px;font-size:10px;">${initials}</span>
+                <span style="font-weight:500">${r.name}</span>
+              </div>
+            </td>
+            <td><span class="pts-big">${r.pts}</span></td>
+            <td><span class="green-val">${r.exact}×</span></td>
+            <td><span class="blue-val">${r.dir}×</span></td>
+            <td style="color:var(--text3)">${r.miss}×</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>
+    </div>
+    ${playedMatches.length > 0 ? `
+    <div class="card">
+      <div class="card-title">Poslední výsledky</div>
+      ${[...playedMatches].reverse().slice(0,8).map(m => {
+        const r = results[m.id];
+        return `<div style="padding:10px 0;border-bottom:1px solid var(--border);">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <span style="font-size:13px;">${m.h} ${m.hn}</span>
+            <span style="font-weight:700;background:var(--bg2);padding:2px 10px;border-radius:6px;font-size:14px;">${r.h}:${r.a}</span>
+            <span style="font-size:13px;">${m.an} ${m.a}</span>
+          </div>
+          <div class="chips">${rows.map(row => {
+            const tip = (tips[row.name]||{})[m.id]||{};
+            const pt = calcPts(tip, r);
+            const tipStr = tip.h!=null&&tip.a!=null ? tip.h+':'+tip.a : '—';
+            const cls = pt===3?'chip-exact':pt===2?'chip-dir':pt===0?'chip-miss':'chip-none';
+            return `<span class="chip ${cls}">${row.name}: ${tipStr}${pt!=null?' (+'+pt+')':''}</span>`;
+          }).join('')}</div>
+        </div>`;
+      }).join('')}
+    </div>` : '<div class="card"><div class="empty"><div class="empty-icon">⏳</div>Výsledky se zobrazí po zadání prvního zápasu</div></div>'}
+  `;
+}
+
+// ─── VYŘAZOVACÍ ČÁST ─────────────────────────────────────────────
+
+// Vypočítá tabulku skupiny a vrátí seřazené týmy
+function getGroupStandings(group) {
+  const gMatches = MATCHES.filter(m => m.g === group);
+  const teams = {};
+  gMatches.forEach(m => {
+    [m.hn, m.an].forEach(t => {
+      if (!teams[t]) teams[t] = { name: t, flag: m.h === '🇨🇿' && t === m.hn ? m.h : (t === m.hn ? m.h : m.a), pts: 0, gf: 0, ga: 0, gd: 0, played: 0 };
+    });
+    const r = results[m.id];
+    if (r && r.h != null && r.a != null) {
+      teams[m.hn].played++;
+      teams[m.an].played++;
+      teams[m.hn].gf += r.h; teams[m.hn].ga += r.a; teams[m.hn].gd += r.h - r.a;
+      teams[m.an].gf += r.a; teams[m.an].ga += r.h; teams[m.an].gd += r.a - r.h;
+      if (r.h > r.a) { teams[m.hn].pts += 3; }
+      else if (r.h < r.a) { teams[m.an].pts += 3; }
+      else { teams[m.hn].pts += 1; teams[m.an].pts += 1; }
+    }
+  });
+  return Object.values(teams).sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf);
+}
+
+// Získá tým podle slotu nebo přímo z match objektu
+function getTeamBySlot(slot) {
+  if (!slot) return null;
+  // Přímý postup z výsledku: "W r32_1" = vítěz zápasu r32_1
+  if (slot.startsWith('W ') || slot.startsWith('L ')) {
+    const matchId = slot.slice(2);
+    const kr = knockoutResults[matchId];
+    // Najdeme match objekt pro vlajky
+    const matchObj = KNOCKOUT_ROUNDS.flatMap(r=>r.matches).find(m=>m.id===matchId);
+    if (!kr || !kr.winner) {
+      // Zápas ještě nebyl odehrán - ukažme kdo by hrál
+      if (matchObj && matchObj.h) return { name: matchObj.hn + ' / ' + matchObj.an, flag: '⚔️', pending: true };
+      return null;
+    }
+    const isWinner = slot.startsWith('W ');
+    const winnerName = kr.winner;
+    if (isWinner) return { name: winnerName, flag: getFlagForTeam(winnerName) };
+    else {
+      const loser = kr.home_team === winnerName ? kr.away_team : kr.home_team;
+      return { name: loser, flag: getFlagForTeam(loser) };
+    }
+  }
+  return null;
+}
+
+// Vrátí home/away tým pro daný match (funguje pro oba typy - fixed i slot)
+function getMatchTeams(m) {
+  if (m.h && m.hn) {
+    // Fixed teams (r32)
+    return {
+      teamH: { name: m.hn, flag: m.h },
+      teamA: { name: m.an, flag: m.a },
+      known: true
+    };
+  }
+  // Slot-based
+  const teamH = getTeamBySlot(m.slot1);
+  const teamA = getTeamBySlot(m.slot2);
+  const known = teamH && teamA && !teamH.pending && !teamA.pending;
+  return { teamH: teamH || { name: m.slot1, flag: '⏳', pending: true },
+           teamA: teamA || { name: m.slot2, flag: '⏳', pending: true }, known };
+}
+
+// Mapa vlajek pro týmy v KO části (skupiny + r32 fixed teams)
+const TEAM_FLAGS = {};
+MATCHES.forEach(m => { TEAM_FLAGS[m.hn] = m.h; TEAM_FLAGS[m.an] = m.a; });
+// Přidáme vlajky z r32 (mohou obsahovat týmy co prošli jako třetí)
+KNOCKOUT_ROUNDS[0].matches.forEach(m => { if(m.h) { TEAM_FLAGS[m.hn]=m.h; TEAM_FLAGS[m.an]=m.a; } });
+function getFlagForTeam(name) { return TEAM_FLAGS[name] || '🏳️'; }
+
+// Bodování KO: 3 = přesný výsledek, 2 = správný vítěz, 0 = špatně
+function calcKOPts(tip, result) {
+  if (!tip || !result || !result.winner) return null;
+  if (tip.winner !== result.winner) return 0;
+  if (tip.h != null && tip.a != null && tip.h == result.home_score && tip.a == result.away_score) return 3;
+  return 2;
+}
+
+function renderKnockout() {
+  const el = document.getElementById('knockoutContent');
+  if (!el) return;
+
+  // R32 má pevné týmy - vyřazovací část je vždy dostupná
+
+  // Render each round
+  let html = '';
+  for (const round of KNOCKOUT_ROUNDS) {
+    html += `<div class="card">
+      <div class="card-title">${round.name}</div>`;
+    for (const m of round.matches) {
+      const { teamH, teamA, known: teamsKnown } = getMatchTeams(m);
+      const kr = knockoutResults[m.id] || {};
+      const myTip = activePlayer ? (knockoutTips[activePlayer] || {})[m.id] || {} : {};
+      const pt = calcKOPts(myTip, kr);
+      const chipHtml = pt === 3 ? '<span class="chip chip-exact">+3</span>' : pt === 2 ? '<span class="chip chip-dir">+2</span>' : pt === 0 ? '<span class="chip chip-miss">0</span>' : '';
+
+      const hName = teamH.name;
+      const aName = teamA.name;
+      const hFlag = teamH.flag;
+      const aFlag = teamA.flag;
+
+      html += `<div class="match-row">
+        <div class="team"><span class="flag">${hFlag}</span><span class="team-name" style="font-size:12px;">${hName}</span></div>
+        <div class="score-wrap">
+          <div style="font-size:10px; color:var(--text3); margin-bottom:4px;">${m.date} ${chipHtml}</div>
+          ${kr.winner ? `<div style="font-weight:700; font-size:15px; padding:4px 10px; background:var(--bg2); border-radius:6px;">${kr.home_score ?? '?'}:${kr.away_score ?? '?'}${kr.home_pens != null ? ' ('+kr.home_pens+':'+kr.away_pens+' pen.)':''}</div>
+          <div style="font-size:11px; color:var(--green); margin-top:2px;">✓ ${kr.winner}</div>` 
+          : teamsKnown ? `<div style="font-size:12px; color:var(--text3); padding:4px 8px;">vs</div>` 
+          : `<div style="font-size:11px; color:var(--text3); padding:4px 8px;">⏳</div>`}
+        </div>
+        <div class="team right"><span class="flag">${aFlag}</span><span class="team-name" style="font-size:12px;">${aName}</span></div>
+      </div>
+      ${teamsKnown && !kr.winner && activePlayer ? renderKOTipRow(m.id, hName, aName, hFlag, aFlag, myTip) : ''}`;
+    }
+    html += `</div>`;
+  }
+
+  // Show player selector
+  html = renderKOPlayerBar() + html;
+  el.innerHTML = html;
+}
+
+function renderKOPlayerBar() {
+  if (!players.length) return '<div class="card"><div class="empty">Nejprve přidej hráče</div></div>';
+  if (!activePlayer || !players.includes(activePlayer)) activePlayer = players[0];
+  return `<div class="card" style="margin-bottom:1rem;">
+    <div style="font-size:12px;color:var(--text2);margin-bottom:8px;font-weight:500;">TIPY ZA HRÁČE:</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;">
+      ${players.map((p,i)=>{
+        const initials = p.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+        return `<button class="btn sm ${p===activePlayer?'active':''}" onclick="setKOPlayer('${esc(p)}')" style="gap:6px;">
+          <span style="width:20px;height:20px;border-radius:50%;background:var(--${p===activePlayer?'blue-dark':'bg3'});color:${p===activePlayer?'#fff':'var(--text2)'};font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;">${initials}</span>
+          ${p}
+        </button>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
+function setKOPlayer(name) { activePlayer = name; renderKnockout(); }
+
+function renderKOTipRow(matchId, hName, aName, hFlag, aFlag, tip) {
+  return `<div style="background:var(--bg2);border-radius:var(--r);padding:8px 12px;margin-top:4px;margin-bottom:4px;">
+    <div style="font-size:11px;color:var(--text2);margin-bottom:6px;">Tvůj tip — kdo postoupí?</div>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+      <button class="btn sm ${tip.winner===hName?'primary':''}" onclick="saveKOWinner('${matchId}','${esc(hName)}')">${hFlag} ${hName}</button>
+      <span style="color:var(--text3);font-size:12px;">nebo</span>
+      <button class="btn sm ${tip.winner===aName?'primary':''}" onclick="saveKOWinner('${matchId}','${esc(aName)}')">${aFlag} ${aName}</button>
+      ${tip.winner ? `<span style="font-size:12px;color:var(--green);margin-left:4px;">✓ ${tip.winner}</span>` : ''}
+    </div>
+  </div>`;
+}
+
+async function saveKOWinner(matchId, winner) {
+  if (!activePlayer) return;
+  if (!knockoutTips[activePlayer]) knockoutTips[activePlayer] = {};
+  knockoutTips[activePlayer][matchId] = { ...(knockoutTips[activePlayer][matchId]||{}), winner };
+  await sbClient.from('knockout_tips').upsert({
+    player_name: activePlayer, match_id: matchId, winner,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'player_name,match_id' });
+  renderKnockout();
+}
+
+// Vyřazovací výsledky - render pro záložku Výsledky
+function renderKnockoutResults() {
+  // R32 má pevné týmy, vždy zobrazíme
+
+  let html = '<div style="margin-top:1.5rem;"><div style="font-size:16px;font-weight:700;margin-bottom:1rem;">Vyřazovací část</div>';
+  for (const round of KNOCKOUT_ROUNDS) {
+    html += `<div class="card"><div class="card-title">${round.name}</div>`;
+    for (const m of round.matches) {
+      const { teamH, teamA, known: teamsKnown } = getMatchTeams(m);
+      if (!teamsKnown) {
+        html += `<div class="match-row"><div style="font-size:13px;color:var(--text3);padding:6px 0;">⏳ ${m.date} — ${teamH.name} vs ${teamA.name}</div></div>`;
+        continue;
+      }
+      const kr = knockoutResults[m.id] || {};
+      html += `<div class="match-row">
+        <div class="team"><span class="flag">${teamH.flag}</span><span class="team-name">${teamH.name}</span></div>
+        <div class="score-wrap">
+          <div class="score-inputs">
+            <input class="score-inp result" type="number" min="0" max="30" value="${kr.home_score!=null?kr.home_score:''}" placeholder="–" onchange="queueKOResult('${m.id}','home_score',this.value,'${esc(teamH.name)}','${esc(teamA.name)}',this)" />
+            <span class="score-sep">:</span>
+            <input class="score-inp result" type="number" min="0" max="30" value="${kr.away_score!=null?kr.away_score:''}" placeholder="–" onchange="queueKOResult('${m.id}','away_score',this.value,'${esc(teamH.name)}','${esc(teamA.name)}',this)" />
+          </div>
+          <div class="match-date">${m.date}</div>
+          ${kr.home_score != null && kr.away_score != null ? `
+          <div style="margin-top:4px;font-size:11px;">
+            pen: <input style="width:28px;height:22px;text-align:center;font-size:12px;border:1px solid var(--border2);border-radius:4px;background:var(--bg2);color:var(--text);" type="number" min="0" max="20" value="${kr.home_pens!=null?kr.home_pens:''}" placeholder="-" onchange="queueKOResult('${m.id}','home_pens',this.value,'${esc(teamH.name)}','${esc(teamA.name)}',this)" />
+            :
+            <input style="width:28px;height:22px;text-align:center;font-size:12px;border:1px solid var(--border2);border-radius:4px;background:var(--bg2);color:var(--text);" type="number" min="0" max="20" value="${kr.away_pens!=null?kr.away_pens:''}" placeholder="-" onchange="queueKOResult('${m.id}','away_pens',this.value,'${esc(teamH.name)}','${esc(teamA.name)}',this)" />
+          </div>
+          <div style="margin-top:4px;font-size:11px;color:var(--text2);">Vítěz: 
+            <button class="btn sm ${kr.winner===teamH.name?'primary':''}" style="padding:2px 8px;font-size:11px;" onclick="setKOWinner('${m.id}','${esc(teamH.name)}','${esc(teamA.name)}')">${teamH.name}</button>
+            <button class="btn sm ${kr.winner===teamA.name?'primary':''}" style="padding:2px 8px;font-size:11px;" onclick="setKOWinner('${m.id}','${esc(teamA.name)}','${esc(teamH.name)}')">${teamA.name}</button>
+          </div>` : ''}
+        </div>
+        <div class="team right"><span class="flag">${teamA.flag}</span><span class="team-name">${teamA.name}</span></div>
+      </div>`;
+    }
+    html += '</div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function queueKOResult(matchId, field, val, hName, aName, inputEl) {
+  if (!knockoutResults[matchId]) knockoutResults[matchId] = { home_team: hName, away_team: aName };
+  knockoutResults[matchId][field] = val === '' ? null : parseInt(val);
+  knockoutResults[matchId].home_team = hName;
+  knockoutResults[matchId].away_team = aName;
+  if (inputEl) { inputEl.classList.add('saved'); setTimeout(() => inputEl.classList.remove('saved'), 1500); }
+  clearTimeout(saveTimers['ko_' + matchId]);
+  saveTimers['ko_' + matchId] = setTimeout(() => flushKOResult(matchId), 800);
+  renderKnockout();
+}
+
+async function setKOWinner(matchId, winner, loser) {
+  if (!knockoutResults[matchId]) knockoutResults[matchId] = {};
+  knockoutResults[matchId].winner = winner;
+  await flushKOResult(matchId);
+  renderResults();
+  renderKnockout();
+  renderRanking();
+}
+
+async function flushKOResult(matchId) {
+  const r = knockoutResults[matchId] || {};
+  await sbClient.from('knockout_results').upsert({
+    match_id: matchId,
+    home_team: r.home_team || null,
+    away_team: r.away_team || null,
+    home_score: r.home_score != null ? r.home_score : null,
+    away_score: r.away_score != null ? r.away_score : null,
+    home_pens: r.home_pens != null ? r.home_pens : null,
+    away_pens: r.away_pens != null ? r.away_pens : null,
+    winner: r.winner || null,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'match_id' });
+}
+
+// ─── HELPERS ─────────────────────────────────────────────────────
+function esc(s) { return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+function renderAll() { renderPlayerList(); renderTips(); renderResults(); renderKnockout(); renderRanking(); }
+
+function showTab(tab, btn) {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(tab).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (tab==='tips') renderTips();
+  if (tab==='results') renderResults();
+  if (tab==='knockout') renderKnockout();
+  if (tab==='ranking') renderRanking();
+}
+
+// ─── START ───────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
