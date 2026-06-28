@@ -341,8 +341,8 @@ CREATE POLICY "public update knockout_results" ON knockout_results FOR UPDATE US
 <script>
 // ─── KONFIGURACE ────────────────────────────────────────────────
 // Buď nastav přímo zde, nebo přes setup screen
-const SUPABASE_URL = 'https://muafitihkjnurswaednm.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11YWZpdGloa2pudXJzd2FlZG5tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwNTE2NjEsImV4cCI6MjA5NjYyNzY2MX0.3DGZcwxx_Z9fdqXz91ANdSn9B-O_EXhAK0tmBWfmZ7Q';
+const SUPABASE_URL = '';
+const SUPABASE_ANON_KEY = '';
 
 // ─── ZÁPASY ─────────────────────────────────────────────────────
 // Všech 72 zápasů skupinové fáze MS 2026 - správné losování
@@ -549,10 +549,12 @@ function setStatus(type, text) {
 
 // ─── DATA LOADING ────────────────────────────────────────────────
 async function loadAll() {
-  const [{ data: pData }, { data: tData }, { data: rData }] = await Promise.all([
+  const [{ data: pData }, { data: tData }, { data: rData }, { data: krData }, { data: ktData }] = await Promise.all([
     sbClient.from('players').select('*').order('created_at'),
     sbClient.from('tips').select('*'),
     sbClient.from('results').select('*'),
+    sbClient.from('knockout_results').select('*'),
+    sbClient.from('knockout_tips').select('*'),
   ]);
 
   players = (pData || []).map(p => p.name);
@@ -567,6 +569,18 @@ async function loadAll() {
   results = {};
   (rData || []).forEach(r => {
     results[r.match_id] = { h: r.home_score, a: r.away_score };
+  });
+
+  knockoutResults = {};
+  (krData || []).forEach(r => {
+    knockoutResults[r.match_id] = r;
+  });
+
+  knockoutTips = {};
+  players.forEach(p => { knockoutTips[p] = {}; });
+  (ktData || []).forEach(t => {
+    if (!knockoutTips[t.player_name]) knockoutTips[t.player_name] = {};
+    knockoutTips[t.player_name][t.match_id] = { winner: t.winner, h: t.home_score, a: t.away_score };
   });
 
   if (!activePlayer && players.length) activePlayer = players[0];
