@@ -339,12 +339,12 @@ CREATE POLICY "public update knockout_results" ON knockout_results FOR UPDATE US
 </div>
 
 <script>
-// ─── KONFIGURACE ────────────────────────────────────────────────
-// Buď nastav přímo zde, nebo přes setup screen
-const SUPABASE_URL = 'https://muafitihkjnurswaednm.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11YWZpdGloa2pudXJzd2FlZG5tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwNTE2NjEsImV4cCI6MjA5NjYyNzY2MX0.3DGZcwxx_Z9fdqXz91ANdSn9B-O_EXhAK0tmBWfmZ7Q';
+    // ─── KONFIGURACE ────────────────────────────────────────────────
+    // Buď nastav přímo zde, nebo přes setup screen
+    const SUPABASE_URL = 'https://muafitihkjnurswaednm.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11YWZpdGloa2pudXJzd2FlZG5tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwNTE2NjEsImV4cCI6MjA5NjYyNzY2MX0.3DGZcwxx_Z9fdqXz91ANdSn9B-O_EXhAK0tmBWfmZ7Q';
 
-// ─── ZÁPASY ─────────────────────────────────────────────────────
+    // ─── ZÁPASY ─────────────────────────────────────────────────────
 // Všech 72 zápasů skupinové fáze MS 2026 - správné losování
 const MATCHES = [
   // SKUPINA A: Mexiko, Jihoafrická republika, Jižní Korea, Česko
@@ -958,7 +958,7 @@ function getFlagForTeam(name) { return TEAM_FLAGS[name] || '🏳️'; }
 
 // Bodování KO: 3 = přesný výsledek, 2 = správný vítěz, 0 = špatně
 function calcKOPts(tip, result) {
-  if (!tip || !result || !result.winner) return null;
+  if (!tip || tip.winner == null || !result || !result.winner) return null;
   if (tip.winner !== result.winner) return 0;
   if (tip.h != null && tip.a != null && tip.h == result.home_score && tip.a == result.away_score) return 3;
   return 2;
@@ -1029,24 +1029,50 @@ function setKOPlayer(name) { activePlayer = name; renderKnockout(); }
 
 function renderKOTipRow(matchId, hName, aName, hFlag, aFlag, tip) {
   return `<div style="background:var(--bg2);border-radius:var(--r);padding:8px 12px;margin-top:4px;margin-bottom:4px;">
-    <div style="font-size:11px;color:var(--text2);margin-bottom:6px;">Tvůj tip — kdo postoupí?</div>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:6px;">Tvůj tip — kdo postoupí? (+2 body, s přesným skóre +3)</div>
     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
       <button class="btn sm ${tip.winner===hName?'primary':''}" onclick="saveKOWinner('${matchId}','${esc(hName)}')">${hFlag} ${hName}</button>
       <span style="color:var(--text3);font-size:12px;">nebo</span>
       <button class="btn sm ${tip.winner===aName?'primary':''}" onclick="saveKOWinner('${matchId}','${esc(aName)}')">${aFlag} ${aName}</button>
       ${tip.winner ? `<span style="font-size:12px;color:var(--green);margin-left:4px;">✓ ${tip.winner}</span>` : ''}
     </div>
+    <div style="display:flex;gap:6px;align-items:center;margin-top:8px;">
+      <span style="font-size:11px;color:var(--text2);">Tip na skóre (nepovinné):</span>
+      <input class="score-inp" style="width:34px;height:28px;font-size:14px;" type="number" min="0" max="30" value="${tip.h!=null?tip.h:''}" placeholder="–" onchange="saveKOTipScore('${matchId}','h',this.value,this)" />
+      <span class="score-sep" style="font-size:14px;">:</span>
+      <input class="score-inp" style="width:34px;height:28px;font-size:14px;" type="number" min="0" max="30" value="${tip.a!=null?tip.a:''}" placeholder="–" onchange="saveKOTipScore('${matchId}','a',this.value,this)" />
+    </div>
   </div>`;
+}
+
+function saveKOTipScore(matchId, side, val, inputEl) {
+  if (!activePlayer) return;
+  if (!knockoutTips[activePlayer]) knockoutTips[activePlayer] = {};
+  if (!knockoutTips[activePlayer][matchId]) knockoutTips[activePlayer][matchId] = {};
+  knockoutTips[activePlayer][matchId][side] = val === '' ? null : parseInt(val);
+  if (inputEl) { inputEl.classList.add('saved'); setTimeout(() => inputEl.classList.remove('saved'), 1500); }
+  const key = 'kotip_' + activePlayer + '_' + matchId;
+  clearTimeout(saveTimers[key]);
+  saveTimers[key] = setTimeout(() => flushKOTip(activePlayer, matchId), 800);
+}
+
+async function flushKOTip(playerName, matchId) {
+  const tip = (knockoutTips[playerName] || {})[matchId] || {};
+  await sbClient.from('knockout_tips').upsert({
+    player_name: playerName,
+    match_id: matchId,
+    winner: tip.winner || null,
+    home_score: tip.h != null ? tip.h : null,
+    away_score: tip.a != null ? tip.a : null,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'player_name,match_id' });
 }
 
 async function saveKOWinner(matchId, winner) {
   if (!activePlayer) return;
   if (!knockoutTips[activePlayer]) knockoutTips[activePlayer] = {};
   knockoutTips[activePlayer][matchId] = { ...(knockoutTips[activePlayer][matchId]||{}), winner };
-  await sbClient.from('knockout_tips').upsert({
-    player_name: activePlayer, match_id: matchId, winner,
-    updated_at: new Date().toISOString(),
-  }, { onConflict: 'player_name,match_id' });
+  await flushKOTip(activePlayer, matchId);
   renderKnockout();
 }
 
