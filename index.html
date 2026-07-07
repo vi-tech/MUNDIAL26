@@ -339,7 +339,7 @@ CREATE POLICY "public update knockout_results" ON knockout_results FOR UPDATE US
 </div>
 
 <script>
-    // ─── KONFIGURACE ────────────────────────────────────────────────
+// ─── KONFIGURACE ────────────────────────────────────────────────
     // Buď nastav přímo zde, nebo přes setup screen
     const SUPABASE_URL = 'https://muafitihkjnurswaednm.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11YWZpdGloa2pudXJzd2FlZG5tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwNTE2NjEsImV4cCI6MjA5NjYyNzY2MX0.3DGZcwxx_Z9fdqXz91ANdSn9B-O_EXhAK0tmBWfmZ7Q';
@@ -1105,9 +1105,10 @@ function renderKnockoutResults() {
             :
             <input style="width:28px;height:22px;text-align:center;font-size:12px;border:1px solid var(--border2);border-radius:4px;background:var(--bg2);color:var(--text);" type="number" min="0" max="20" value="${kr.away_pens!=null?kr.away_pens:''}" placeholder="-" onchange="queueKOResult('${m.id}','away_pens',this.value,'${esc(teamH.name)}','${esc(teamA.name)}',this)" />
           </div>
-          <div style="margin-top:4px;font-size:11px;color:var(--text2);">Vítěz: 
-            <button class="btn sm ${kr.winner===teamH.name?'primary':''}" style="padding:2px 8px;font-size:11px;" onclick="setKOWinner('${m.id}','${esc(teamH.name)}','${esc(teamA.name)}')">${teamH.name}</button>
-            <button class="btn sm ${kr.winner===teamA.name?'primary':''}" style="padding:2px 8px;font-size:11px;" onclick="setKOWinner('${m.id}','${esc(teamA.name)}','${esc(teamH.name)}')">${teamA.name}</button>
+          <div style="margin-top:4px;font-size:11px;color:var(--text2);">
+            ${kr.winner ? `Vítěz: <strong style="color:var(--green)">${kr.winner}</strong> ✓` : (kr.home_score === kr.away_score ? `Remíza — zadej penalty, nebo vyber vítěze:
+            <button class="btn sm" style="padding:2px 8px;font-size:11px;" onclick="setKOWinner('${m.id}','${esc(teamH.name)}','${esc(teamA.name)}')">${teamH.name}</button>
+            <button class="btn sm" style="padding:2px 8px;font-size:11px;" onclick="setKOWinner('${m.id}','${esc(teamA.name)}','${esc(teamH.name)}')">${teamA.name}</button>` : '')}
           </div>` : ''}
         </div>
         <div class="team right"><span class="flag">${teamA.flag}</span><span class="team-name">${teamA.name}</span></div>
@@ -1119,15 +1120,25 @@ function renderKnockoutResults() {
   return html;
 }
 
+// Automaticky určí vítěze ze skóre (a při remíze z penalt)
+function computeKOWinner(r) {
+  if (r.home_score == null || r.away_score == null) return null;
+  if (r.home_score > r.away_score) return r.home_team;
+  if (r.home_score < r.away_score) return r.away_team;
+  if (r.home_pens != null && r.away_pens != null && r.home_pens !== r.away_pens)
+    return r.home_pens > r.away_pens ? r.home_team : r.away_team;
+  return r.winner || null; // remíza bez penalt — ponech ruční volbu
+}
+
 function queueKOResult(matchId, field, val, hName, aName, inputEl) {
   if (!knockoutResults[matchId]) knockoutResults[matchId] = { home_team: hName, away_team: aName };
   knockoutResults[matchId][field] = val === '' ? null : parseInt(val);
   knockoutResults[matchId].home_team = hName;
   knockoutResults[matchId].away_team = aName;
+  knockoutResults[matchId].winner = computeKOWinner(knockoutResults[matchId]);
   if (inputEl) { inputEl.classList.add('saved'); setTimeout(() => inputEl.classList.remove('saved'), 1500); }
   clearTimeout(saveTimers['ko_' + matchId]);
-  saveTimers['ko_' + matchId] = setTimeout(() => flushKOResult(matchId), 800);
-  renderKnockout();
+  saveTimers['ko_' + matchId] = setTimeout(() => { flushKOResult(matchId); renderResults(); renderKnockout(); renderRanking(); }, 800);
 }
 
 async function setKOWinner(matchId, winner, loser) {
